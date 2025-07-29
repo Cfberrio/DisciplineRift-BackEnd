@@ -1,48 +1,57 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { supabase } from "@/lib/supabase/client"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import { supabase } from "@/lib/supabase/client";
 
 interface Service {
-  id: string
-  teamid: string
-  name: string
-  description: string
-  price: number
-  participants: number
-  status: "active" | "inactive" | "ended"
-  isactive: boolean
-  schoolid: number
-  school?: string
-  sessions?: any[]
-  enrolledStudents?: number
+  id: string;
+  teamid: string;
+  name: string;
+  description: string;
+  price: number;
+  participants: number;
+  status: "active" | "inactive" | "ended";
+  isactive: boolean;
+  schoolid: number;
+  school?: string;
+  sessions?: any[];
+  enrolledStudents?: number;
 }
 
 interface ServicesContextType {
-  services: Service[]
-  isLoading: boolean
-  error: Error | null
-  createService: (service: any) => Promise<void>
-  updateService: (id: string, service: Partial<Service>) => Promise<void>
-  deleteService: (id: string) => Promise<void>
-  refreshServices: () => Promise<void>
+  services: Service[];
+  isLoading: boolean;
+  error: Error | null;
+  createService: (service: any) => Promise<void>;
+  updateService: (id: string, service: Partial<Service>) => Promise<void>;
+  deleteService: (id: string) => Promise<void>;
+  refreshServices: () => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
-const ServicesContext = createContext<ServicesContextType | undefined>(undefined)
+const ServicesContext = createContext<ServicesContextType | undefined>(
+  undefined
+);
 
 export function ServicesProvider({ children }: { children: ReactNode }) {
-  const [services, setServices] = useState<Service[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+  const [services, setServices] = useState<Service[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchServices = async () => {
     try {
-      setIsLoading(true)
-      setError(null)
-      console.log("ServicesContext: Fetching services from team table...")
+      setIsLoading(true);
+      setError(null);
 
       // Query teams with school information and sessions
-      const { data: teams, error: teamsError } = await supabase.from("team").select(`
+      const { data: teams, error: teamsError } = await supabase.from("team")
+        .select(`
           teamid,
           schoolid,
           name,
@@ -56,93 +65,117 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
             name,
             location
           )
-        `)
+        `);
 
       if (teamsError) {
-        console.error("ServicesContext: Error fetching teams:", teamsError)
-        throw teamsError
+        console.error("ServicesContext: Error fetching teams:", teamsError);
+        throw teamsError;
       }
-
-      console.log("ServicesContext: Teams data:", teams)
 
       // Ensure teams is always an array
-      const teamsArray = Array.isArray(teams) ? teams : []
+      const teamsArray = Array.isArray(teams) ? teams : [];
 
       if (teamsArray.length === 0) {
-        console.log("ServicesContext: No teams found")
-        setServices([])
-        return
+        setServices([]);
+        return;
       }
 
-      // For each team, get enrolled students count and sessions
-      const servicesWithDetails = await Promise.all(
-        teamsArray.map(async (team) => {
-          try {
-            // Get enrolled students count
-            const { data: enrollments, error: enrollmentError } = await supabase
-              .from("enrollment")
-              .select("enrollmentid")
-              .eq("teamid", team.teamid)
-              .eq("isactive", true)
+      // Optimize: Get all enrollments and sessions in batch queries
+      const teamIds = teamsArray.map((team) => team.teamid);
 
-            const enrolledCount = enrollmentError ? 0 : Array.isArray(enrollments) ? enrollments.length : 0
+      // Batch query for all enrollments
+      const { data: allEnrollments } = await supabase
+        .from("enrollment")
+        .select("teamid")
+        .in("teamid", teamIds)
+        .eq("isactive", true);
 
-            // Get sessions for this team
-            const { data: sessions, error: sessionsError } = await supabase
-              .from("session")
-              .select("*")
-              .eq("teamid", team.teamid)
+      // Batch query for all sessions
+      const { data: allSessions } = await supabase
+        .from("session")
+        .select("*")
+        .in("teamid", teamIds);
 
-            const teamSessions = sessionsError ? [] : Array.isArray(sessions) ? sessions : []
+      // Group data by teamid for efficient lookup
+      const enrollmentCounts = (allEnrollments || []).reduce(
+        (acc, enrollment: any) => {
+          const teamId = String(enrollment.teamid);
+          acc[teamId] = (acc[teamId] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
-            return {
-              id: team.teamid,
-              teamid: team.teamid,
-              name: team.name || "Sin nombre",
-              description: team.description || "",
-              price: team.price || 0,
-              participants: team.participants || 0,
-              status: team.isactive ? "active" : ("inactive" as "active" | "inactive" | "ended"),
-              isactive: team.isactive,
-              schoolid: team.schoolid,
-              school: team.school?.name || "Sin escuela",
-              sessions: teamSessions,
-              enrolledStudents: enrolledCount,
-            }
-          } catch (error) {
-            console.error("ServicesContext: Error processing team:", team.teamid, error)
-            return {
-              id: team.teamid,
-              teamid: team.teamid,
-              name: team.name || "Sin nombre",
-              description: team.description || "",
-              price: team.price || 0,
-              participants: 0,
-              status: "inactive" as "active" | "inactive" | "ended",
-              isactive: team.isactive,
-              schoolid: team.schoolid,
-              school: team.school?.name || "Sin escuela",
-              sessions: [],
-              enrolledStudents: 0,
-            }
-          }
-        }),
-      )
+      const sessionsByTeam = (allSessions || []).reduce((acc, session: any) => {
+        const teamId = String(session.teamid);
+        if (!acc[teamId]) acc[teamId] = [];
+        acc[teamId].push(session);
+        return acc;
+      }, {} as Record<string, any[]>);
 
-      console.log("ServicesContext: Services with details:", servicesWithDetails)
-      setServices(servicesWithDetails)
+      // Process teams with pre-fetched data
+      const servicesWithDetails = teamsArray.map((team: any) => {
+        try {
+          const teamId = String(team.teamid);
+          const enrolledCount = enrollmentCounts[teamId] || 0;
+          const teamSessions = sessionsByTeam[teamId] || ([] as any[]);
+
+          return {
+            id: team.teamid,
+            teamid: team.teamid,
+            name: team.name || "Sin nombre",
+            description: team.description || "",
+            price: team.price || 0,
+            participants: team.participants || 0,
+            status: team.isactive
+              ? "active"
+              : ("inactive" as "active" | "inactive" | "ended"),
+            isactive: team.isactive,
+            schoolid: team.schoolid,
+            school: team.school?.name || "Sin escuela",
+            sessions: teamSessions,
+            enrolledStudents: enrolledCount,
+          };
+        } catch (error) {
+          console.error(
+            "ServicesContext: Error processing team:",
+            team.teamid,
+            error
+          );
+          return {
+            id: team.teamid,
+            teamid: team.teamid,
+            name: team.name || "Sin nombre",
+            description: team.description || "",
+            price: team.price || 0,
+            participants: 0,
+            status: "inactive" as "active" | "inactive" | "ended",
+            isactive: team.isactive,
+            schoolid: team.schoolid,
+            school: team.school?.name || "Sin escuela",
+            sessions: [],
+            enrolledStudents: 0,
+          };
+        }
+      });
+
+      console.log(
+        "ServicesContext: Services with details:",
+        servicesWithDetails
+      );
+      setServices(servicesWithDetails);
     } catch (error) {
-      console.error("ServicesContext: Error fetching services:", error)
-      setError(error as Error)
-      setServices([]) // Always set to empty array on error
+      console.error("ServicesContext: Error fetching services:", error);
+      setError(error as Error);
+      setServices([]); // Always set to empty array on error
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const createService = async (serviceData: any) => {
     try {
-      console.log("ServicesContext: Creating service with data:", serviceData)
+      console.log("ServicesContext: Creating service with data:", serviceData);
 
       // Step 1: Create the team record first
       const teamInsertData = {
@@ -152,181 +185,275 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         price: serviceData.price,
         participants: serviceData.participants || 20,
         isactive: serviceData.status === "active",
-      }
+      };
 
-      console.log("ServicesContext: Creating team with data:", teamInsertData)
+      console.log("ServicesContext: Creating team with data:", teamInsertData);
 
-      const { data: newTeam, error: teamError } = await supabase.from("team").insert([teamInsertData]).select().single()
+      const { data: newTeam, error: teamError } = await supabase
+        .from("team")
+        .insert([teamInsertData])
+        .select()
+        .single();
 
       if (teamError) {
-        console.error("ServicesContext: Error creating team:", teamError)
-        throw new Error(`Failed to create team: ${teamError.message}`)
+        console.error("ServicesContext: Error creating team:", teamError);
+        throw new Error(`Failed to create team: ${teamError.message}`);
       }
 
-      console.log("ServicesContext: Team created successfully with teamid:", newTeam.teamid)
+      console.log(
+        "ServicesContext: Team created successfully with teamid:",
+        newTeam.teamid
+      );
 
       // Step 2: Create sessions using the returned teamid
-      if (serviceData.sections && Array.isArray(serviceData.sections) && serviceData.sections.length > 0) {
-        console.log("ServicesContext: Creating sessions for sections:", serviceData.sections)
+      if (
+        serviceData.sections &&
+        Array.isArray(serviceData.sections) &&
+        serviceData.sections.length > 0
+      ) {
+        console.log(
+          "ServicesContext: Creating sessions for sections:",
+          serviceData.sections
+        );
 
         for (const section of serviceData.sections) {
-          console.log("ServicesContext: Processing section:", section)
+          console.log("ServicesContext: Processing section:", section);
 
           // Validate section data
           if (!section.startDate || !section.startTime) {
-            console.warn("ServicesContext: Skipping section with missing startDate or startTime:", section)
-            continue
+            console.warn(
+              "ServicesContext: Skipping section with missing startDate or startTime:",
+              section
+            );
+            continue;
           }
 
           // Convert startDate to Date object if it's not already
-          const startDate = section.startDate instanceof Date ? section.startDate : new Date(section.startDate)
-          
+          const startDate =
+            section.startDate instanceof Date
+              ? section.startDate
+              : new Date(section.startDate);
+
           // Get the day of the week from the start date
-          const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
-          let dayOfWeek = dayNames[startDate.getDay()]
+          const dayNames = [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+          ];
+          let dayOfWeek = dayNames[startDate.getDay()];
 
           // If section has daysOfWeek array, use the first one (or could combine them)
-          if (section.daysOfWeek && Array.isArray(section.daysOfWeek) && section.daysOfWeek.length > 0) {
-            dayOfWeek = section.daysOfWeek[0] // Use first selected day
+          if (
+            section.daysOfWeek &&
+            Array.isArray(section.daysOfWeek) &&
+            section.daysOfWeek.length > 0
+          ) {
+            dayOfWeek = section.daysOfWeek[0]; // Use first selected day
           }
 
           // Calculate end time based on start time and duration
-          const [startHour, startMinute] = section.startTime.split(":").map(Number)
-          
+          const [startHour, startMinute] = section.startTime
+            .split(":")
+            .map(Number);
+
           // Parse duration (handles "1 hr", "30 min", "1.5 hrs", etc.)
-          let durationMinutes = 60 // Default
+          let durationMinutes = 60; // Default
           if (section.duration) {
-            const durationStr = section.duration.toLowerCase()
+            const durationStr = section.duration.toLowerCase();
             if (durationStr.includes("min")) {
-              durationMinutes = parseInt(durationStr) || 60
+              durationMinutes = parseInt(durationStr) || 60;
             } else if (durationStr.includes("hr")) {
-              const hours = parseFloat(durationStr) || 1
-              durationMinutes = hours * 60
+              const hours = parseFloat(durationStr) || 1;
+              durationMinutes = hours * 60;
             }
           }
 
-          const endTime = new Date(0, 0, 0, startHour, startMinute + durationMinutes)
-          const endTimeString = endTime.toTimeString().slice(0, 5)
+          const endTime = new Date(
+            0,
+            0,
+            0,
+            startHour,
+            startMinute + durationMinutes
+          );
+          const endTimeString = endTime.toTimeString().slice(0, 5);
 
-          // Calculate end date for sessions
-          let endDate = startDate
-          if (section.recurringDates && Array.isArray(section.recurringDates) && section.recurringDates.length > 0) {
+          // Use end date from section if available, otherwise calculate based on repeat pattern
+          let endDate = startDate;
+          if (section.endDate) {
+            // Use the end date from the form
+            endDate =
+              section.endDate instanceof Date
+                ? section.endDate
+                : new Date(section.endDate);
+          } else if (
+            section.recurringDates &&
+            Array.isArray(section.recurringDates) &&
+            section.recurringDates.length > 0
+          ) {
             // Use last recurring date
-            endDate = section.recurringDates[section.recurringDates.length - 1]
+            endDate = section.recurringDates[section.recurringDates.length - 1];
           } else if (section.repeat && section.repeat !== "none") {
             // Calculate end date based on repeat pattern (default to 8 weeks)
-            const weeksToAdd = section.repeat === "weekly" ? 8 : section.repeat === "biweekly" ? 16 : 32
-            endDate = new Date(startDate)
-            endDate.setDate(startDate.getDate() + (weeksToAdd * 7))
+            const weeksToAdd =
+              section.repeat === "weekly"
+                ? 8
+                : section.repeat === "biweekly"
+                ? 16
+                : 32;
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + weeksToAdd * 7);
           }
 
           // Prepare session data
-            const sessionData = {
-              teamid: newTeam.teamid,
+          const sessionData = {
+            teamid: newTeam.teamid,
             startdate: startDate.toISOString().split("T")[0],
-            enddate: endDate instanceof Date ? endDate.toISOString().split("T")[0] : endDate.toISOString().split("T")[0],
-              starttime: section.startTime,
+            enddate: endDate.toISOString().split("T")[0],
+            starttime: section.startTime,
             endtime: section.endTime || endTimeString, // Use endTime if available, otherwise calculate
             repeat: section.repeat || "none",
-              daysofweek: dayOfWeek,
-              coachid: section.staffId ? Number.parseInt(section.staffId) : null,
-            }
+            daysofweek: dayOfWeek,
+            coachid: section.staffId || null, // staffId is UUID string, use directly
+          };
 
-          console.log("ServicesContext: Creating session:", sessionData)
+          console.log("ServicesContext: Creating session:", sessionData);
 
-            const { error: sessionError } = await supabase.from("session").insert([sessionData])
+          const { error: sessionError } = await supabase
+            .from("session")
+            .insert([sessionData]);
 
-            if (sessionError) {
-            console.error("ServicesContext: Error creating session:", sessionError)
-              throw new Error(`Failed to create session: ${sessionError.message}`)
+          if (sessionError) {
+            console.error(
+              "ServicesContext: Error creating session:",
+              sessionError
+            );
+            throw new Error(
+              `Failed to create session: ${sessionError.message}`
+            );
           }
         }
 
-        console.log("ServicesContext: All sessions created successfully")
+        console.log("ServicesContext: All sessions created successfully");
       }
 
       // Refresh services to show the new service
-      await refreshServices()
-      console.log("ServicesContext: Service creation completed successfully")
+      await refreshServices();
+      console.log("ServicesContext: Service creation completed successfully");
     } catch (error) {
-      console.error("ServicesContext: Error creating service:", error)
-      throw error
+      console.error("ServicesContext: Error creating service:", error);
+      throw error;
     }
-  }
+  };
 
   const updateService = async (id: string, serviceData: Partial<Service>) => {
     try {
-      console.log("ServicesContext: Updating service:", id, serviceData)
+      console.log("ServicesContext: Updating service:", id, serviceData);
 
-      const updateData: any = {}
-      if (serviceData.name !== undefined) updateData.name = serviceData.name
-      if (serviceData.description !== undefined) updateData.description = serviceData.description
-      if (serviceData.price !== undefined) updateData.price = serviceData.price
-      if (serviceData.schoolid !== undefined) updateData.schoolid = serviceData.schoolid
-      if (serviceData.participants !== undefined) updateData.participants = serviceData.participants
-      if (serviceData.isactive !== undefined) updateData.isactive = serviceData.isactive
+      const updateData: any = {};
+      if (serviceData.name !== undefined) updateData.name = serviceData.name;
+      if (serviceData.description !== undefined)
+        updateData.description = serviceData.description;
+      if (serviceData.price !== undefined) updateData.price = serviceData.price;
+      if (serviceData.schoolid !== undefined)
+        updateData.schoolid = serviceData.schoolid;
+      if (serviceData.participants !== undefined)
+        updateData.participants = serviceData.participants;
+      if (serviceData.isactive !== undefined)
+        updateData.isactive = serviceData.isactive;
 
-      const { error } = await supabase.from("team").update(updateData).eq("teamid", id)
+      const { error } = await supabase
+        .from("team")
+        .update(updateData)
+        .eq("teamid", id);
 
       if (error) {
-        console.error("ServicesContext: Error updating team:", error)
-        throw error
+        console.error("ServicesContext: Error updating team:", error);
+        throw error;
       }
 
-      await refreshServices()
+      await refreshServices();
     } catch (error) {
-      console.error("ServicesContext: Error updating service:", error)
-      throw error
+      console.error("ServicesContext: Error updating service:", error);
+      throw error;
     }
-  }
+  };
 
   const deleteService = async (id: string) => {
     try {
-      console.log("ServicesContext: Deleting service:", id)
+      console.log("ServicesContext: Deleting service:", id);
 
       // First delete related sessions
-      const { error: sessionsError } = await supabase.from("session").delete().eq("teamid", id)
+      const { error: sessionsError } = await supabase
+        .from("session")
+        .delete()
+        .eq("teamid", id);
 
       if (sessionsError) {
-        console.error("ServicesContext: Error deleting sessions:", sessionsError)
+        console.error(
+          "ServicesContext: Error deleting sessions:",
+          sessionsError
+        );
         // Continue with team deletion even if sessions deletion fails
       } else {
-        console.log("ServicesContext: Sessions deleted successfully for team:", id)
+        console.log(
+          "ServicesContext: Sessions deleted successfully for team:",
+          id
+        );
       }
 
       // Then delete the team
-      const { error: teamError } = await supabase.from("team").delete().eq("teamid", id)
+      const { error: teamError } = await supabase
+        .from("team")
+        .delete()
+        .eq("teamid", id);
 
       if (teamError) {
-        console.error("ServicesContext: Error deleting team:", teamError)
-        throw new Error(`Error eliminando el servicio: ${teamError.message || 'Error desconocido'}`)
+        console.error("ServicesContext: Error deleting team:", teamError);
+        throw new Error(
+          `Error eliminando el servicio: ${
+            teamError.message || "Error desconocido"
+          }`
+        );
       }
 
-      console.log("ServicesContext: Team deleted successfully:", id)
+      console.log("ServicesContext: Team deleted successfully:", id);
 
       // Update the local state immediately to provide instant feedback
-      setServices(prevServices => {
-        const updatedServices = prevServices.filter(service => service.id !== id && service.teamid !== id)
-        console.log("ServicesContext: Updated local state, remaining services:", updatedServices.length)
-        return updatedServices
-      })
+      setServices((prevServices) => {
+        const updatedServices = prevServices.filter(
+          (service) => service.id !== id && service.teamid !== id
+        );
+        console.log(
+          "ServicesContext: Updated local state, remaining services:",
+          updatedServices.length
+        );
+        return updatedServices;
+      });
 
       // Also refresh from database to ensure consistency
-      await refreshServices()
-      console.log("ServicesContext: Delete completed successfully")
+      await refreshServices();
+      console.log("ServicesContext: Delete completed successfully");
     } catch (error) {
-      console.error("ServicesContext: Error deleting service:", error)
-      throw error
+      console.error("ServicesContext: Error deleting service:", error);
+      throw error;
     }
-  }
+  };
 
   const refreshServices = async () => {
-    await fetchServices()
-  }
+    await fetchServices();
+  };
+
+  const refreshData = async () => {
+    await fetchServices();
+  };
 
   useEffect(() => {
-    fetchServices()
-  }, [])
+    fetchServices();
+  }, []); // Simple initialization without event listeners
 
   return (
     <ServicesContext.Provider
@@ -338,17 +465,18 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         updateService,
         deleteService,
         refreshServices,
+        refreshData,
       }}
     >
       {children}
     </ServicesContext.Provider>
-  )
+  );
 }
 
 export function useServices() {
-  const context = useContext(ServicesContext)
+  const context = useContext(ServicesContext);
   if (context === undefined) {
-    throw new Error("useServices must be used within a ServicesProvider")
+    throw new Error("useServices must be used within a ServicesProvider");
   }
-  return context
+  return context;
 }

@@ -1,52 +1,73 @@
-"use client"
+"use client";
 
-import React from "react"
+import React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { Calendar, Plus, Trash2, CalendarDays } from "lucide-react"
-import { SectionDialog } from "./section-dialog"
-import { SectionDebug } from "./section-debug"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { Badge } from "@/components/ui/badge"
-import { useSchools } from "@/contexts/schools-context"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Calendar, Plus, Trash2, CalendarDays } from "lucide-react";
+import { SectionDialog } from "./section-dialog";
+import { SectionDebug } from "./section-debug";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+import { useSchoolsWithRefresh } from "@/hooks/use-schools-with-refresh";
 
 // Updated Section interface without maxParticipants
 interface Section {
-  id: string
-  name: string
-  startDate: Date
-  startTime: string
-  duration: string
-  repeat: string
-  staffId: string
-  recurringDates?: Date[]
+  id: string;
+  name: string;
+  startDate: Date;
+  startTime: string;
+  duration: string;
+  repeat: string;
+  staffId: string;
+  recurringDates?: Date[];
 }
 
 /**
  * Interface for the ServiceFormProps
  */
 interface ServiceFormProps {
-  initialData?: any
-  onSubmit: (data: any) => Promise<void>
-  onCancel: () => void
-  isLoading?: boolean
+  initialData?: any;
+  onSubmit: (data: any) => Promise<void>;
+  onCancel: () => void;
+  isLoading?: boolean;
 }
 
 /**
  * Service Form Component
  */
-export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false }: ServiceFormProps) {
-  const { toast } = useToast()
-  const { schools, isLoading: schoolsLoading } = useSchools()
+export function ServiceForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading = false,
+}: ServiceFormProps) {
+  const { toast } = useToast();
+  const {
+    schools,
+    loading: schoolsLoading,
+    refreshData: refreshSchools,
+  } = useSchoolsWithRefresh();
 
   const [formData, setFormData] = useState({
     name: initialData?.name || "",
@@ -59,15 +80,15 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
     description: initialData?.description || "",
     status: initialData?.status || "active",
     schoolId: initialData?.schoolId || initialData?.schoolid || undefined, // New field for school selection
-  })
+  });
 
   // State for sections (previously sessions)
-  const [sections, setSections] = useState<Section[]>([])
-  const [showSectionDialog, setShowSectionDialog] = useState(false)
-  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
-  const [showDebug, setShowDebug] = useState(false)
+  const [sections, setSections] = useState<Section[]>([]);
+  const [showSectionDialog, setShowSectionDialog] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
-  const isEditing = !!initialData
+  const isEditing = !!initialData;
 
   /**
    * Handles form input changes
@@ -76,99 +97,103 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
   /**
    * Opens the section dialog for editing
    */
   const handleEditSection = (sectionId: string) => {
-    console.log("Opening edit dialog for section:", sectionId)
-    setEditingSectionId(sectionId)
-    setShowSectionDialog(true)
-  }
+    console.log("Opening edit dialog for section:", sectionId);
+    setEditingSectionId(sectionId);
+    setShowSectionDialog(true);
+  };
 
   const handleSaveSection = React.useCallback(
     (section: Section) => {
-      console.log("=== handleSaveSection called ===")
-      console.log("Section data received:", section)
-      console.log("Current sections before save:", sections)
-      console.log("Editing section ID:", editingSectionId)
+      console.log("=== handleSaveSection called ===");
+      console.log("Section data received:", section);
+      console.log("Current sections before save:", sections);
+      console.log("Editing section ID:", editingSectionId);
 
       try {
         if (editingSectionId) {
           // Update existing section
-          console.log("Updating existing section with ID:", editingSectionId)
+          console.log("Updating existing section with ID:", editingSectionId);
           setSections((prevSections) => {
-            const updatedSections = prevSections.map((s) => (s.id === editingSectionId ? section : s))
-            console.log("Updated sections array:", updatedSections)
-            return updatedSections
-          })
-          setEditingSectionId(null)
+            const updatedSections = prevSections.map((s) =>
+              s.id === editingSectionId ? section : s
+            );
+            console.log("Updated sections array:", updatedSections);
+            return updatedSections;
+          });
+          setEditingSectionId(null);
         } else {
           // Add new section
-          console.log("Adding new section")
+          console.log("Adding new section");
           setSections((prevSections) => {
-            const newSections = [...prevSections, section]
-            console.log("New sections array:", newSections)
-            return newSections
-          })
+            const newSections = [...prevSections, section];
+            console.log("New sections array:", newSections);
+            return newSections;
+          });
         }
 
-        setShowSectionDialog(false)
+        setShowSectionDialog(false);
 
         toast({
           title: "Sección guardada",
-          description: editingSectionId ? "La sección ha sido actualizada" : "Nueva sección añadida al servicio",
-        })
+          description: editingSectionId
+            ? "La sección ha sido actualizada"
+            : "Nueva sección añadida al servicio",
+        });
 
-        console.log("Section save completed successfully")
+        console.log("Section save completed successfully");
       } catch (error) {
-        console.error("Error in handleSaveSection:", error)
+        console.error("Error in handleSaveSection:", error);
         toast({
           title: "Error",
           description: "Error al guardar la sección",
           variant: "destructive",
-        })
+        });
       }
     },
-    [editingSectionId, sections, toast],
-  )
+    [editingSectionId, sections, toast]
+  );
 
   /**
    * Handles deleting a section
    */
   const handleDeleteSection = (sectionId: string) => {
-    console.log("Deleting section:", sectionId)
-    setSections(sections.filter((s) => s.id !== sectionId))
+    console.log("Deleting section:", sectionId);
+    setSections(sections.filter((s) => s.id !== sectionId));
 
     toast({
       title: "Sección eliminada",
       description: "La sección ha sido eliminada del servicio",
-    })
-  }
+    });
+  };
 
   /**
    * Gets the section being edited, if any
    */
   const getEditingSection = () => {
-    if (!editingSectionId) return null
-    return sections.find((s) => s.id === editingSectionId) || null
-  }
+    if (!editingSectionId) return null;
+    return sections.find((s) => s.id === editingSectionId) || null;
+  };
 
   /**
    * Gets the selected school name
    */
   const getSelectedSchoolName = () => {
-    if (!formData.schoolId) return ""
-    const school = schools.find((s) => s.schoolid === formData.schoolId)
-    return school ? school.name : ""
-  }
+    if (!formData.schoolId) return "";
+    const school = schools.find((s) => s.schoolid === formData.schoolId);
+    return school ? school.name : "";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Form submitted with data:", formData)
-    console.log("Sections data:", sections)
+    e.preventDefault();
+    console.log("Form submitted with data:", formData);
+    console.log("Sections data:", sections);
 
     // Basic validation
     if (!formData.name) {
@@ -176,8 +201,8 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
         title: "Error",
         description: "El nombre del servicio es obligatorio",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (!formData.schoolId) {
@@ -185,8 +210,8 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
         title: "Error",
         description: "Debe seleccionar una escuela",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     // Validate that there's at least one section
@@ -195,8 +220,8 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
         title: "Error",
         description: "Debe añadir al menos una sección al servicio",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     // Convert price to float and prepare data for submission
@@ -205,46 +230,53 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
       price: Number.parseFloat(formData.price.toString()) || 0, // Ensure price is a float
       participants: Number.parseInt(formData.participants.toString()) || 20, // Ensure participants is a number
       sections: sections,
-    }
+    };
 
-    console.log("Final data to submit:", dataToSubmit)
+    console.log("Final data to submit:", dataToSubmit);
 
     try {
-      await onSubmit(dataToSubmit)
+      await onSubmit(dataToSubmit);
     } catch (error) {
-      console.error("Error submitting form:", error)
+      console.error("Error submitting form:", error);
       // Error handling is done in the parent component
     }
-  }
+  };
 
   /**
    * Formats the repeat pattern for display
    */
   const formatRepeatPattern = (repeat: string) => {
-    if (repeat === "none") return "No se repite"
-    if (repeat === "weekly") return "Semanal"
-    if (repeat === "biweekly") return "Cada 2 semanas"
-    if (repeat === "monthly") return "Mensual"
-    return repeat
-  }
+    if (repeat === "none") return "No se repite";
+    if (repeat === "weekly") return "Semanal";
+    if (repeat === "biweekly") return "Cada 2 semanas";
+    if (repeat === "monthly") return "Mensual";
+    return repeat;
+  };
 
   /**
    * Gets the total number of scheduled dates for all sections
    */
   const getTotalScheduledDates = () => {
     return sections.reduce((total, section) => {
-      if (section.repeat === "none") return total + 1
-      return total + (section.recurringDates?.length || 1)
-    }, 0)
-  }
+      if (section.repeat === "none") return total + 1;
+      return total + (section.recurringDates?.length || 1);
+    }, 0);
+  };
 
   return (
     <Card className="w-full">
       <form onSubmit={handleSubmit}>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>{isEditing ? "Editar Servicio" : "Añadir Nuevo Servicio"}</CardTitle>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setShowDebug(!showDebug)}>
+            <CardTitle>
+              {isEditing ? "Editar Servicio" : "Añadir Nuevo Servicio"}
+            </CardTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebug(!showDebug)}
+            >
               {showDebug ? "Ocultar Debug" : "Mostrar Debug"}
             </Button>
           </div>
@@ -319,18 +351,31 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
               <Label htmlFor="school">Seleccionar Escuela *</Label>
               <Select
                 value={formData.schoolId?.toString() || ""}
-                onValueChange={(value) => handleChange("schoolId", Number.parseInt(value))}
+                onValueChange={(value) =>
+                  handleChange("schoolId", Number.parseInt(value))
+                }
                 disabled={isLoading || schoolsLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={schoolsLoading ? "Cargando escuelas..." : "Seleccionar una escuela"} />
+                  <SelectValue
+                    placeholder={
+                      schoolsLoading
+                        ? "Cargando escuelas..."
+                        : "Seleccionar una escuela"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {schools.map((school) => (
-                    <SelectItem key={school.schoolid} value={school.schoolid.toString()}>
+                    <SelectItem
+                      key={school.schoolid}
+                      value={school.schoolid.toString()}
+                    >
                       <div className="flex flex-col">
                         <span className="font-medium">{school.name}</span>
-                        <span className="text-sm text-muted-foreground">{school.location}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {school.location}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
@@ -338,7 +383,8 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
               </Select>
               {formData.schoolId && (
                 <p className="text-sm text-muted-foreground">
-                  Escuela seleccionada: <strong>{getSelectedSchoolName()}</strong>
+                  Escuela seleccionada:{" "}
+                  <strong>{getSelectedSchoolName()}</strong>
                 </p>
               )}
             </div>
@@ -355,17 +401,20 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CalendarDays className="h-4 w-4" />
                     <span>
-                      {sections.length} sección{sections.length !== 1 ? "es" : ""} • {getTotalScheduledDates()} fecha
-                      {getTotalScheduledDates() !== 1 ? "s" : ""} programada{getTotalScheduledDates() !== 1 ? "s" : ""}
+                      {sections.length} sección
+                      {sections.length !== 1 ? "es" : ""} •{" "}
+                      {getTotalScheduledDates()} fecha
+                      {getTotalScheduledDates() !== 1 ? "s" : ""} programada
+                      {getTotalScheduledDates() !== 1 ? "s" : ""}
                     </span>
                   </div>
                 )}
                 <Button
                   type="button"
                   onClick={() => {
-                    console.log("Opening new section dialog")
-                    setEditingSectionId(null)
-                    setShowSectionDialog(true)
+                    console.log("Opening new section dialog");
+                    setEditingSectionId(null);
+                    setShowSectionDialog(true);
                   }}
                   size="sm"
                   className="gap-1"
@@ -383,16 +432,19 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
                   <div className="space-y-1">
                     <h4 className="text-sm font-medium">No hay secciones</h4>
                     <p className="text-sm text-muted-foreground">
-                      Añade secciones a este servicio para que los clientes puedan inscribirse.
+                      Añade secciones a este servicio para que los clientes
+                      puedan inscribirse.
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     className="mt-2 bg-transparent"
                     onClick={() => {
-                      console.log("Opening new section dialog from empty state")
-                      setEditingSectionId(null)
-                      setShowSectionDialog(true)
+                      console.log(
+                        "Opening new section dialog from empty state"
+                      );
+                      setEditingSectionId(null);
+                      setShowSectionDialog(true);
                     }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -414,30 +466,50 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
                           </Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          Inicio: {format(section.startDate, "EEE, d MMM yyyy", { locale: es })} • {section.startTime} •{" "}
-                          {section.duration}
+                          Inicio:{" "}
+                          {format(section.startDate, "EEE, d MMM yyyy", {
+                            locale: es,
+                          })}{" "}
+                          • {section.startTime} • {section.duration}
                         </div>
-                        <div className="text-sm text-muted-foreground">Instructor: {section.staffId}</div>
-                        {section.recurringDates && section.recurringDates.length > 1 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {section.recurringDates.slice(0, 6).map((date, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {format(date, "MMM d", { locale: es })}
-                              </Badge>
-                            ))}
-                            {section.recurringDates.length > 6 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{section.recurringDates.length - 6} más
-                              </Badge>
-                            )}
-                          </div>
-                        )}
+                        <div className="text-sm text-muted-foreground">
+                          Instructor: {section.staffId}
+                        </div>
+                        {section.recurringDates &&
+                          section.recurringDates.length > 1 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {section.recurringDates
+                                .slice(0, 6)
+                                .map((date, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {format(date, "MMM d", { locale: es })}
+                                  </Badge>
+                                ))}
+                              {section.recurringDates.length > 6 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{section.recurringDates.length - 6} más
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                       </div>
                       <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                        <Button variant="outline" size="sm" onClick={() => handleEditSection(section.id)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSection(section.id)}
+                        >
                           Editar
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteSection(section.id)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteSection(section.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -449,7 +521,9 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
           </div>
 
           {/* Debug Component */}
-          {showDebug && <SectionDebug sections={sections} onTestSave={handleSaveSection} />}
+          {showDebug && (
+            <SectionDebug sections={sections} onTestSave={handleSaveSection} />
+          )}
 
           <Separator />
 
@@ -457,7 +531,9 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Configuración General</h3>
             <div className="space-y-2">
-              <Label htmlFor="participants">Número Máximo de Participantes por Defecto</Label>
+              <Label htmlFor="participants">
+                Número Máximo de Participantes por Defecto
+              </Label>
               <Input
                 id="participants"
                 type="number"
@@ -467,18 +543,27 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
                 disabled={isLoading}
               />
               <p className="text-xs text-muted-foreground">
-                Este valor se usa como referencia general. La capacidad específica de cada sección se gestiona por
-                separado.
+                Este valor se usa como referencia general. La capacidad
+                específica de cada sección se gestiona por separado.
               </p>
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
             Cancelar
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Guardando..." : isEditing ? "Actualizar Servicio" : "Crear Servicio"}
+            {isLoading
+              ? "Guardando..."
+              : isEditing
+              ? "Actualizar Servicio"
+              : "Crear Servicio"}
           </Button>
         </CardFooter>
       </form>
@@ -487,14 +572,14 @@ export function ServiceForm({ initialData, onSubmit, onCancel, isLoading = false
       <SectionDialog
         open={showSectionDialog}
         onClose={() => {
-          console.log("Closing section dialog")
-          setShowSectionDialog(false)
-          setEditingSectionId(null)
+          console.log("Closing section dialog");
+          setShowSectionDialog(false);
+          setEditingSectionId(null);
         }}
         onSave={handleSaveSection}
         initialData={getEditingSection()}
         serviceName={formData.name || "Nuevo Servicio"}
       />
     </Card>
-  )
+  );
 }
