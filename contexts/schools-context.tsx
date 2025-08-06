@@ -34,7 +34,14 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       console.log("SchoolsContext: Fetching schools...");
 
-      const data = await schoolsApi.getAll();
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timeout")), 10000); // 10 seconds
+      });
+
+      const dataPromise = schoolsApi.getAll();
+      const data = (await Promise.race([dataPromise, timeoutPromise])) as any;
+
       console.log(
         "SchoolsContext: Fetched schools:",
         data?.length || 0,
@@ -50,11 +57,15 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
         err instanceof Error ? err.message : "Error desconocido";
       setError(errorMessage);
       setSchools([]); // Always set empty array on error
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las escuelas",
-        variant: "destructive",
-      });
+
+      // Only show toast for non-timeout errors
+      if (!errorMessage.includes("timeout")) {
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las escuelas",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

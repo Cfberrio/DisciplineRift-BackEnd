@@ -49,9 +49,12 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Query teams with school information and sessions
-      const { data: teams, error: teamsError } = await supabase.from("team")
-        .select(`
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timeout")), 15000); // 15 seconds for complex query
+      });
+
+      const teamsPromise = supabase.from("team").select(`
           teamid,
           schoolid,
           name,
@@ -66,6 +69,11 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
             location
           )
         `);
+
+      const { data: teams, error: teamsError } = (await Promise.race([
+        teamsPromise,
+        timeoutPromise,
+      ])) as any;
 
       if (teamsError) {
         console.error("ServicesContext: Error fetching teams:", teamsError);
@@ -284,11 +292,25 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
           // Use end date from section if available, otherwise calculate based on repeat pattern
           let endDate = startDate;
           if (section.endDate) {
-            // Use the end date from the form
-            endDate =
-              section.endDate instanceof Date
-                ? section.endDate
-                : new Date(section.endDate);
+            // Use the end date from the form - ensure proper date handling
+            if (section.endDate instanceof Date) {
+              endDate = section.endDate;
+            } else {
+              // If it's a string, parse it properly
+              const endDateStr = section.endDate;
+              if (typeof endDateStr === "string") {
+                // Handle different date formats
+                if (endDateStr.includes("T")) {
+                  endDate = new Date(endDateStr);
+                } else {
+                  // Assume YYYY-MM-DD format
+                  const [year, month, day] = endDateStr.split("-").map(Number);
+                  endDate = new Date(year, month - 1, day); // month is 0-indexed
+                }
+              } else {
+                endDate = new Date(endDateStr);
+              }
+            }
           } else if (
             section.recurringDates &&
             Array.isArray(section.recurringDates) &&
@@ -321,6 +343,15 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
           };
 
           console.log("ServicesContext: Creating session:", sessionData);
+          console.log(
+            "ServicesContext: Original section.endDate:",
+            section.endDate
+          );
+          console.log("ServicesContext: Processed endDate object:", endDate);
+          console.log(
+            "ServicesContext: Final enddate string:",
+            endDate.toISOString().split("T")[0]
+          );
 
           const { error: sessionError } = await supabase
             .from("session")
