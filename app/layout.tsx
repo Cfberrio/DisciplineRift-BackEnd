@@ -6,6 +6,8 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { ServicesProvider } from "@/contexts/services-context";
 import { SchoolsProvider } from "@/contexts/schools-context";
 import { StaffProvider } from "@/contexts/staff-context";
+import MetricsProvider from "@/components/metrics-provider";
+import DevWDYR from "@/components/dev-wdyr";
 import { Toaster } from "@/components/ui/toaster";
 
 // Force dynamic rendering for the entire app
@@ -27,16 +29,19 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <AuthProvider>
-          <SchoolsProvider>
-            <ServicesProvider>
-              <StaffProvider>
-                {children}
-                <Toaster />
-              </StaffProvider>
-            </ServicesProvider>
-          </SchoolsProvider>
-        </AuthProvider>
+        {process.env.NODE_ENV === 'development' ? <DevWDYR /> : null}
+        <MetricsProvider>
+          <AuthProvider>
+            <SchoolsProvider>
+              <ServicesProvider>
+                <StaffProvider>
+                  {children}
+                  <Toaster />
+                </StaffProvider>
+              </ServicesProvider>
+            </SchoolsProvider>
+          </AuthProvider>
+        </MetricsProvider>
       </body>
     </html>
   );
