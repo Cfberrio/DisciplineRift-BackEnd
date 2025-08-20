@@ -2,9 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, MapPin } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, MapPin, Calendar } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function Schedule() {
+  const router = useRouter()
+  
   const events = [
     {
       id: 1,
@@ -60,9 +64,20 @@ export function Schedule() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Agenda</CardTitle>
-        <CardDescription>Próximos eventos de hoy</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-lg">Agenda</CardTitle>
+          <CardDescription>Próximos eventos de hoy</CardDescription>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => router.push('/calendario')}
+          className="flex items-center gap-2"
+        >
+          <Calendar className="h-4 w-4" />
+          Ver calendario
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {events.map((event) => (

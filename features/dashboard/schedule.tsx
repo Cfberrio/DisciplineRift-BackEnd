@@ -7,9 +7,11 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useSchedule } from "@/lib/hooks/use-schedule"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
 
 export function Schedule() {
   const { data, isLoading, error, refetch } = useSchedule()
+  const router = useRouter()
 
   // Default events to show while loading
   const defaultEvents = [
@@ -49,8 +51,8 @@ export function Schedule() {
           <CardTitle>Agenda</CardTitle>
           <CardDescription>Próximas sesiones y eventos</CardDescription>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Ver todos
+        <Button variant="outline" size="sm" onClick={() => router.push('/calendario')}>
+          Ver calendario
         </Button>
       </CardHeader>
       <CardContent className="p-6">
