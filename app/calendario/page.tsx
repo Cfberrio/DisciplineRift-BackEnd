@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/sidebar"
 import { WeeklyCalendar } from "@/features/calendar/weekly-calendar"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
-export default function CalendarioPage() {
+export default function CalendarPage() {
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-gray-50">

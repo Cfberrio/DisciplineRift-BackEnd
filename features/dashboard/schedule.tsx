@@ -42,17 +42,17 @@ export function Schedule() {
   ]
 
   const events = data?.events || defaultEvents
-  const currentDate = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long" })
+  const currentDate = new Date().toLocaleDateString("en-US", { day: "numeric", month: "long" })
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Agenda</CardTitle>
-          <CardDescription>Próximas sesiones y eventos</CardDescription>
+          <CardTitle>Schedule</CardTitle>
+          <CardDescription>Upcoming sessions and events</CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={() => router.push('/calendario')}>
-          Ver calendario
+          View calendar
         </Button>
       </CardHeader>
       <CardContent className="p-6">
@@ -79,7 +79,7 @@ export function Schedule() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="text-sm font-medium">Hoy, {currentDate}</div>
+            <div className="text-sm font-medium">Today, {currentDate}</div>
             <div className="grid gap-4">
               {events.map((event, index) => (
                 <div key={event.id}>
@@ -93,7 +93,7 @@ export function Schedule() {
                         <Clock className="h-3 w-3" />
                         {event.time}
                         <Badge variant="outline" className="ml-1">
-                          {event.participants}/{event.maxParticipants} participantes
+                          {event.participants}/{event.maxParticipants} participants
                         </Badge>
                       </div>
                     </div>
@@ -105,7 +105,7 @@ export function Schedule() {
           </div>
         )}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-md">Error al cargar los datos: {error.message}</div>
+          <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-md">Error loading data: {error.message}</div>
         )}
       </CardContent>
     </Card>

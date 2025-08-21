@@ -1,66 +1,66 @@
-# 🚀 Optimizaciones de Rendimiento - Dashboard Calendar
+# 🚀 Performance Optimizations - Dashboard Calendar
 
-## Problemas Identificados y Solucionados
+## Identified and Solved Problems
 
-### ❌ **Problema 1: Error en consulta de coaches**
+### ❌ **Problem 1: Coach query error**
 **Error**: `Error fetching coaches: {}`
-**Causa**: El código buscaba campos `staffid`, `firstname`, `lastname` pero la tabla `staff` usa `id`, `name`, `email`.
+**Cause**: Code was looking for fields `staffid`, `firstname`, `lastname` but the `staff` table uses `id`, `name`, `email`.
 
-**✅ Solución implementada:**
+**✅ Implemented solution:**
 ```typescript
-// ANTES (incorrecto)
+// BEFORE (incorrect)
 .select('staffid, firstname, lastname, email')
 .eq('staffid', coachid)
 
-// DESPUÉS (correcto)  
+// AFTER (correct)  
 .select('id, name, email')
 .eq('id', coachid)
 ```
 
-### ❌ **Problema 2: Rendimiento extremadamente lento**
-**Causa**: 
-- Una consulta individual `getTeamName()` por cada sesión (N+1 queries)
-- Cargas secuenciales en lugar de paralelas
-- Múltiples llamadas redundantes a la base de datos
+### ❌ **Problem 2: Extremely slow performance**
+**Cause**: 
+- Individual query `getTeamName()` for each session (N+1 queries)
+- Sequential loads instead of parallel
+- Multiple redundant database calls
 
-**✅ Soluciones implementadas:**
+**✅ Implemented solutions:**
 
-#### 1. **Función optimizada `fetchCalendarData()`**
-- **ANTES**: 1 query para sesiones + N queries para nombres de equipos + 1 query para coaches
-- **DESPUÉS**: 3 queries totales en paralelo
+#### 1. **Optimized function `fetchCalendarData()`**
+- **BEFORE**: 1 query for sessions + N queries for team names + 1 query for coaches
+- **AFTER**: 3 total queries in parallel
 
 ```typescript
-// Carga todo en paralelo en lugar de secuencial
+// Load everything in parallel instead of sequential
 const [sessionsResult, coachesResult] = await Promise.all([
   supabase.from('session').select('...'),
   supabase.from('staff').select('...')
 ])
 
-// Una sola query para todos los nombres de equipos
+// Single query for all team names
 const teamNames = await getTeamNames(uniqueTeamIds)
 ```
 
-#### 2. **Batch loading de nombres de equipos**
+#### 2. **Batch loading of team names**
 ```typescript
-// ANTES: N queries individuales
+// BEFORE: N individual queries
 for (const session of sessions) {
-  const teamName = await getTeamName(session.teamid) // ❌ Una query por sesión
+  const teamName = await getTeamName(session.teamid) // ❌ One query per session
 }
 
-// DESPUÉS: 1 query para todos los equipos
-const teamNames = await getTeamNames(uniqueTeamIds) // ✅ Una query total
+// AFTER: 1 query for all teams
+const teamNames = await getTeamNames(uniqueTeamIds) // ✅ One total query
 const teamName = teamNames[session.teamid]
 ```
 
-#### 3. **Cargas paralelas en EventDrawer**
+#### 3. **Parallel loads in EventDrawer**
 ```typescript
-// ANTES: Cargas secuenciales (lento)
+// BEFORE: Sequential loads (slow)
 const sessionData = await getSessionById(eventInfo.sessionid)
 const teamNameData = await getTeamName(eventInfo.teamid)
 const coachesData = await getAvailableCoaches()
 const parentsData = await getParentsByTeam(eventInfo.teamid)
 
-// DESPUÉS: Cargas paralelas (rápido)
+// AFTER: Parallel loads (fast)
 const [sessionData, teamNameData, coachesData, parentsData] = await Promise.all([
   getSessionById(eventInfo.sessionid),
   getTeamName(eventInfo.teamid),
@@ -69,47 +69,47 @@ const [sessionData, teamNameData, coachesData, parentsData] = await Promise.all(
 ])
 ```
 
-## 📊 Mejoras de Rendimiento
+## 📊 Performance Improvements
 
-### Tiempo de Carga Estimado
+### Estimated Load Time
 
-| Componente | ANTES | DESPUÉS | Mejora |
-|-----------|-------|---------|--------|
-| CalendarWeek (10 sesiones) | ~3-5 segundos | ~0.5-1 segundo | **80-85% más rápido** |
-| EventDrawer | ~2-3 segundos | ~0.5-0.8 segundos | **75-80% más rápido** |
-| Consultas a DB | 15+ queries | 3-4 queries | **75% menos consultas** |
+| Component | BEFORE | AFTER | Improvement |
+|-----------|--------|-------|-------------|
+| CalendarWeek (10 sessions) | ~3-5 seconds | ~0.5-1 second | **80-85% faster** |
+| EventDrawer | ~2-3 seconds | ~0.5-0.8 seconds | **75-80% faster** |
+| DB Queries | 15+ queries | 3-4 queries | **75% fewer queries** |
 
-### Reducción de Consultas
+### Query Reduction
 
-**Ejemplo con 5 equipos y 10 sesiones:**
+**Example with 5 teams and 10 sessions:**
 
-| Operación | ANTES | DESPUÉS | Reducción |
-|-----------|-------|---------|-----------|
-| Cargar calendario | 1 + 10 + 5 + 1 = **17 queries** | **3 queries** | 82% menos |
-| Cargar evento | **4 queries secuenciales** | **4 queries paralelas** | Mismo número, 75% más rápido |
+| Operation | BEFORE | AFTER | Reduction |
+|-----------|--------|-------|-----------|
+| Load calendar | 1 + 10 + 5 + 1 = **17 queries** | **3 queries** | 82% less |
+| Load event | **4 sequential queries** | **4 parallel queries** | Same number, 75% faster |
 
-## 🎨 Mejoras en UX
+## 🎨 UX Improvements
 
-### 1. **Estados de carga mejorados**
-- **Skeleton screens** detallados en lugar de spinners simples
-- **Carga progresiva** con indicadores específicos
-- **Feedback visual** durante las operaciones
+### 1. **Improved loading states**
+- **Detailed skeleton screens** instead of simple spinners
+- **Progressive loading** with specific indicators
+- **Visual feedback** during operations
 
-### 2. **Carga no bloqueante**
-- El usuario ve skeletons inmediatamente
-- Los datos se van poblando progresivamente
-- No hay pantallas en blanco
+### 2. **Non-blocking loading**
+- User sees skeletons immediately
+- Data populates progressively
+- No blank screens
 
-## 🔧 Optimizaciones Técnicas Implementadas
+## 🔧 Technical Optimizations Implemented
 
 ### 1. **Batch Queries**
 ```typescript
-// Nueva función para cargar múltiples equipos
+// New function to load multiple teams
 export async function getTeamNames(teamids: string[]): Promise<Record<string, string>> {
   const { data } = await supabase
     .from('team')
     .select('teamid, name')
-    .in('teamid', teamids) // ✅ Una query para todos los IDs
+    .in('teamid', teamids) // ✅ One query for all IDs
   
   return data.reduce((acc, team) => {
     acc[team.teamid] = team.name
@@ -118,26 +118,26 @@ export async function getTeamNames(teamids: string[]): Promise<Record<string, st
 }
 ```
 
-### 2. **Promise.all() para Paralelismo**
+### 2. **Promise.all() for Parallelism**
 ```typescript
-// Cargar datos relacionados en paralelo
+// Load related data in parallel
 const [sessions, coaches] = await Promise.all([
   fetchSessions(),
   getAvailableCoaches()
 ])
 ```
 
-### 3. **Memoización de colores**
+### 3. **Color memoization**
 ```typescript
-// Generar colores una sola vez por equipo
+// Generate colors once per team
 const getTeamColor = useCallback((teamid: string) => {
-  // Hash estable para colores consistentes
+  // Stable hash for consistent colors
 }, [])
 ```
 
 ### 4. **Skeleton Components**
 ```typescript
-// Loading states específicos y detallados
+// Specific and detailed loading states
 {loading ? (
   <SkeletonCalendar />
 ) : (
@@ -145,48 +145,48 @@ const getTeamColor = useCallback((teamid: string) => {
 )}
 ```
 
-## 📈 Métricas de Monitoreo
+## 📈 Monitoring Metrics
 
-### Queries a monitorear:
-1. `fetchCalendarData()` - debe ser ≤ 3 queries
-2. `getTeamNames()` - debe ser 1 query sin importar el número de equipos
-3. Tiempo total de carga inicial < 1 segundo
+### Queries to monitor:
+1. `fetchCalendarData()` - must be ≤ 3 queries
+2. `getTeamNames()` - must be 1 query regardless of number of teams
+3. Total initial load time < 1 second
 
-### Indicadores de rendimiento:
-- **FCP (First Contentful Paint)**: Skeletons aparecen inmediatamente
-- **LCP (Largest Contentful Paint)**: Calendario completo ≤ 1 segundo
-- **TTI (Time to Interactive)**: Filtros y clicks funcionan inmediatamente
+### Performance indicators:
+- **FCP (First Contentful Paint)**: Skeletons appear immediately
+- **LCP (Largest Contentful Paint)**: Complete calendar ≤ 1 second
+- **TTI (Time to Interactive)**: Filters and clicks work immediately
 
-## 🚦 Antes vs Después
+## 🚦 Before vs After
 
-### ANTES (Lento):
+### BEFORE (Slow):
 ```
-1. Usuario abre /calendario
-2. Pantalla en blanco por 2-3 segundos
-3. Spinner simple
-4. 15+ queries a la DB secuenciales
-5. Calendario aparece completo de golpe
-```
-
-### DESPUÉS (Rápido):
-```
-1. Usuario abre /calendario  
-2. Skeleton detallado aparece inmediatamente (< 100ms)
-3. 3 queries paralelas a la DB
-4. Datos se van poblando progresivamente
-5. Calendario completamente funcional en < 1 segundo
+1. User opens /calendario
+2. Blank screen for 2-3 seconds
+3. Simple spinner
+4. 15+ sequential DB queries
+5. Calendar appears complete at once
 ```
 
-## ✅ Beneficios Adicionales
+### AFTER (Fast):
+```
+1. User opens /calendario  
+2. Detailed skeleton appears immediately (< 100ms)
+3. 3 parallel DB queries
+4. Data populates progressively
+5. Fully functional calendar in < 1 second
+```
 
-1. **Escalabilidad**: Rendimiento consistente con 10 o 100 equipos
-2. **Experiencia móvil**: Carga más rápida en conexiones lentas  
-3. **Menos carga en DB**: Menor número de queries reduce la carga del servidor
-4. **Error handling**: Mejor manejo de errores parciales
-5. **Mantenibilidad**: Código más limpio y modular
+## ✅ Additional Benefits
+
+1. **Scalability**: Consistent performance with 10 or 100 teams
+2. **Mobile experience**: Faster loading on slow connections  
+3. **Less DB load**: Fewer queries reduces server load
+4. **Error handling**: Better handling of partial errors
+5. **Maintainability**: Cleaner and more modular code
 
 ---
 
-**Implementado**: Enero 2024  
-**Impacto**: 80% mejora en tiempo de carga, 75% menos consultas a DB  
-**Estado**: ✅ Completado y testeado
+**Implemented**: January 2024  
+**Impact**: 80% improvement in load time, 75% fewer DB queries  
+**Status**: ✅ Completed and tested

@@ -5,7 +5,7 @@ import CalendarWeek from "@/components/calendar/CalendarWeek"
 import { EventDrawer } from "@/components/calendar/EventDrawer"
 
 interface WeeklyCalendarProps {
-  events?: any[] // Mantener compatibilidad con props anteriores
+  events?: any[] // Keep compatibility with previous props
 }
 
 export function WeeklyCalendar({ events = [] }: WeeklyCalendarProps) {
@@ -38,7 +38,7 @@ export function WeeklyCalendar({ events = [] }: WeeklyCalendarProps) {
   }
 
   const handleEventUpdated = () => {
-    // Forzar re-render del calendario incrementando la key
+    // Force calendar re-render by incrementing the key
     setCalendarKey(prev => prev + 1)
   }
 

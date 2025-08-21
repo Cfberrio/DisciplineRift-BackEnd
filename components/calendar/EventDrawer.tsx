@@ -95,30 +95,30 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
   })
 
   const [emailTemplate, setEmailTemplate] = useState<EmailTemplate>({
-    subject: 'Recordatorio de Práctica - {teamName}',
+    subject: 'Practice Reminder - {teamName}',
     html: `
-<h2>🏐 Recordatorio de Práctica</h2>
-<p>Hola <strong>{parentName}</strong>,</p>
+<h2>🏐 Practice Reminder</h2>
+<p>Hello <strong>{parentName}</strong>,</p>
 
-<p>Te recordamos que <strong>{studentName}</strong> tiene una práctica programada:</p>
+<p>We remind you that <strong>{studentName}</strong> has a scheduled practice:</p>
 
 <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
-  <p><strong>📅 Equipo:</strong> {teamName}</p>
-  <p><strong>📅 Fecha:</strong> {practiceDate}</p>
-  <p><strong>⏰ Hora:</strong> {practiceTime}</p>
+  <p><strong>📅 Team:</strong> {teamName}</p>
+  <p><strong>📅 Date:</strong> {practiceDate}</p>
+  <p><strong>⏰ Time:</strong> {practiceTime}</p>
   <p><strong>👨‍💼 Coach:</strong> {coachName}</p>
 </div>
 
-<p>Por favor, asegúrate de que llegue 10 minutos antes del inicio.</p>
+<p>Please make sure to arrive 10 minutes before the start time.</p>
 
-<p>¡Nos vemos en la práctica!</p>
-<p><em>Sistema de Gestión de Prácticas</em></p>
+<p>See you at practice!</p>
+<p><em>Practice Management System</em></p>
     `.trim()
   })
 
   const { toast } = useToast()
 
-  // Cargar datos cuando se abre el drawer
+  // Load data when drawer opens
   useEffect(() => {
     if (open && eventInfo) {
       loadEventData()
@@ -131,7 +131,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     try {
       setLoading(true)
       
-      // Cargar todos los datos en paralelo para mayor velocidad
+      // Load all data in parallel for better performance
       const [sessionData, teamNameData, coachesData, parentsData] = await Promise.all([
         getSessionById(eventInfo.sessionid),
         getTeamName(eventInfo.teamid),
@@ -142,7 +142,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       if (!sessionData) {
         toast({
           title: "Error",
-          description: "No se pudo cargar la información de la sesión",
+          description: "Could not load session information",
           variant: "destructive"
         })
         return
@@ -153,7 +153,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       setAvailableCoaches(coachesData)
       setParents(parentsData)
       
-      // Cargar información del coach si existe
+      // Load coach information if exists
       if (sessionData.coachid) {
         const coachData = await getCoachInfo(sessionData.coachid)
         setCoachInfo(coachData)
@@ -161,7 +161,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
         setCoachInfo(null)
       }
       
-      // Inicializar formulario de edición
+      // Initialize edit form
       setEditForm({
         startdate: sessionData.startdate,
         enddate: sessionData.enddate || sessionData.startdate,
@@ -176,7 +176,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       console.error('Error loading event data:', error)
       toast({
         title: "Error",
-        description: "Error al cargar los datos del evento",
+        description: "Error loading event data",
         variant: "destructive"
       })
     } finally {
@@ -184,15 +184,15 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     }
   }
 
-  // Manejar guardado de cambios
+  // Handle saving changes
   const handleSave = async () => {
     if (!session || !eventInfo) return
     
-    // Validaciones
+    // Validations
     if (!validateDaysOfWeek(editForm.daysofweek)) {
       toast({
-        title: "Error de validación",
-        description: "Los días de la semana no son válidos",
+        title: "Validation Error",
+        description: "Days of the week are not valid",
         variant: "destructive"
       })
       return
@@ -200,8 +200,8 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     
     if (editForm.starttime >= editForm.endtime) {
       toast({
-        title: "Error de validación", 
-        description: "La hora de fin debe ser posterior a la hora de inicio",
+        title: "Validation Error", 
+        description: "End time must be after start time",
         variant: "destructive"
       })
       return
@@ -209,8 +209,8 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     
     if (new Date(editForm.startdate) > new Date(editForm.enddate)) {
       toast({
-        title: "Error de validación",
-        description: "La fecha de fin debe ser posterior a la fecha de inicio",
+        title: "Validation Error",
+        description: "End date must be after start date",
         variant: "destructive"
       })
       return
@@ -231,16 +231,16 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       })
       
       toast({
-        title: "Éxito",
-        description: "La sesión se ha actualizado correctamente"
+        title: "Success",
+        description: "Session updated successfully"
       })
       
       setEditMode(false)
       
-      // Recargar datos
+      // Reload data
       await loadEventData()
       
-      // Notificar al padre para recargar el calendario
+      // Notify parent to reload calendar
       if (onEventUpdated) {
         onEventUpdated()
       }
@@ -249,7 +249,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       console.error('Error saving session:', error)
       toast({
         title: "Error",
-        description: "Error al guardar los cambios",
+        description: "Error saving changes",
         variant: "destructive"
       })
     } finally {
@@ -257,7 +257,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     }
   }
 
-  // Manejar envío de email personalizado
+  // Handle sending custom email
   const handleSendEmail = async () => {
     if (!eventInfo || !session) return
     
@@ -279,14 +279,14 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       })
       
       if (!response.ok) {
-        throw new Error('Error al enviar emails')
+        throw new Error('Error sending emails')
       }
       
       const result = await response.json()
       
       toast({
-        title: "Emails enviados",
-        description: `Se enviaron ${result.sent} emails personalizados a los padres`
+        title: "Emails sent",
+        description: `${result.sent} personalized emails sent to parents`
       })
       
       setShowEmailEditor(false)
@@ -295,7 +295,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       console.error('Error sending email:', error)
       toast({
         title: "Error",
-        description: "Error al enviar los emails",
+        description: "Error sending emails",
         variant: "destructive"
       })
     } finally {
@@ -303,7 +303,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     }
   }
 
-  // Obtener próximas ocurrencias
+  // Get upcoming occurrences
   const getUpcomingOccurrences = () => {
     if (!session) return []
     
@@ -329,7 +329,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
             {teamName}
           </SheetTitle>
           <SheetDescription>
-            Gestionar práctica del equipo
+            Manage team practice
           </SheetDescription>
         </SheetHeader>
 
@@ -347,7 +347,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
             <div className="flex items-center justify-center py-4">
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Cargando información...</p>
+                <p className="text-sm text-muted-foreground">Loading information...</p>
               </div>
             </div>
           </div>
@@ -355,16 +355,16 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
           <div className="mt-6">
             <Tabs defaultValue="details" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="details">Detalles</TabsTrigger>
-                <TabsTrigger value="edit">Editar</TabsTrigger>
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="edit">Edit</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
               </TabsList>
 
               <TabsContent value="details" className="space-y-4">
-                {/* Información del evento actual */}
+                {/* Current event information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Información de esta práctica</CardTitle>
+                    <CardTitle className="text-lg">This Practice Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -376,25 +376,25 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                     
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{coachInfo?.name || 'Sin coach asignado'}</span>
+                      <span>{coachInfo?.name || 'No coach assigned'}</span>
                     </div>
                     
                     {session && (
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>Días: {formatDaysOfWeek(session.daysofweek || '')}</span>
+                        <span>Days: {formatDaysOfWeek(session.daysofweek || '')}</span>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Próximas ocurrencias */}
+                {/* Upcoming occurrences */}
                 {upcomingOccurrences.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Próximas prácticas</CardTitle>
+                      <CardTitle className="text-lg">Upcoming Practices</CardTitle>
                       <CardDescription>
-                        Las siguientes {upcomingOccurrences.length} prácticas de esta serie
+                        The next {upcomingOccurrences.length} practices in this series
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -414,25 +414,25 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                   </Card>
                 )}
 
-                {/* Participantes */}
+                {/* Participants */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Users className="h-5 w-5" />
-                      Participantes
+                      Participants
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-muted-foreground">
-                        {parents.length} padre{parents.length !== 1 ? 's' : ''} en la lista
+                        {parents.length} parent{parents.length !== 1 ? 's' : ''} in the list
                       </span>
                     </div>
                     
                     {parents.length === 0 && (
                       <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-700 rounded-md">
                         <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm">No hay participantes registrados en este equipo</span>
+                        <span className="text-sm">No participants registered in this team</span>
                       </div>
                     )}
                   </CardContent>
@@ -442,15 +442,15 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
               <TabsContent value="edit" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Editar serie de prácticas</CardTitle>
+                    <CardTitle className="text-lg">Edit Practice Series</CardTitle>
                     <CardDescription>
-                      Los cambios afectarán todas las prácticas futuras de esta serie
+                      Changes will affect all future practices in this series
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="startdate">Fecha de inicio</Label>
+                        <Label htmlFor="startdate">Start Date</Label>
                         <Input
                           id="startdate"
                           type="date"
@@ -460,7 +460,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                       </div>
                       
                       <div>
-                        <Label htmlFor="enddate">Fecha de fin</Label>
+                        <Label htmlFor="enddate">End Date</Label>
                         <Input
                           id="enddate"
                           type="date"
@@ -472,7 +472,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="starttime">Hora de inicio</Label>
+                        <Label htmlFor="starttime">Start Time</Label>
                         <Input
                           id="starttime"
                           type="time"
@@ -482,7 +482,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                       </div>
                       
                       <div>
-                        <Label htmlFor="endtime">Hora de fin</Label>
+                        <Label htmlFor="endtime">End Time</Label>
                         <Input
                           id="endtime"
                           type="time"
@@ -493,29 +493,29 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                     </div>
 
                     <div>
-                      <Label htmlFor="daysofweek">Días de la semana</Label>
+                      <Label htmlFor="daysofweek">Days of the Week</Label>
                       <Input
                         id="daysofweek"
-                        placeholder="ej: monday,wednesday,friday o lunes,miércoles,viernes"
+                        placeholder="e.g: monday,wednesday,friday or lunes,miércoles,viernes"
                         value={editForm.daysofweek}
                         onChange={(e) => setEditForm(prev => ({ ...prev, daysofweek: e.target.value }))}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Separar con comas. Ejemplos: "lunes,miércoles,viernes" o "monday,wednesday,friday"
+                        Separate with commas. Examples: "monday,wednesday,friday" or "lunes,miércoles,viernes"
                       </p>
                     </div>
 
                     <div>
-                      <Label htmlFor="coachid">Coach asignado</Label>
+                      <Label htmlFor="coachid">Assigned Coach</Label>
                       <Select
                         value={editForm.coachid}
                         onValueChange={(value) => setEditForm(prev => ({ ...prev, coachid: value }))}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar coach" />
+                          <SelectValue placeholder="Select coach" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Sin coach asignado</SelectItem>
+                          <SelectItem value="none">No coach assigned</SelectItem>
                           {availableCoaches.map((coach) => (
                             <SelectItem key={coach.id} value={coach.id}>
                               {coach.name}
@@ -532,7 +532,7 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                         ) : (
                           <Save className="h-4 w-4 mr-2" />
                         )}
-                        Guardar cambios
+                        Save Changes
                       </Button>
                     </div>
                   </CardContent>
@@ -542,58 +542,58 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
               <TabsContent value="email" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Editor de Email Personalizado</CardTitle>
+                    <CardTitle className="text-lg">Custom Email Editor</CardTitle>
                     <CardDescription>
-                      Personaliza el email que se enviará a todos los padres del equipo
+                      Customize the email that will be sent to all team parents
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="email-subject">Asunto del email</Label>
+                      <Label htmlFor="email-subject">Email Subject</Label>
                       <Input
                         id="email-subject"
                         value={emailTemplate.subject}
                         onChange={(e) => setEmailTemplate(prev => ({ ...prev, subject: e.target.value }))}
-                        placeholder="Asunto del email"
+                        placeholder="Email subject"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="email-html">Contenido HTML del email</Label>
+                      <Label htmlFor="email-html">Email HTML Content</Label>
                       <Textarea
                         id="email-html"
                         value={emailTemplate.html}
                         onChange={(e) => setEmailTemplate(prev => ({ ...prev, html: e.target.value }))}
-                        placeholder="Contenido HTML del email"
+                        placeholder="Email HTML content"
                         rows={12}
                         className="font-mono text-sm"
                       />
                     </div>
 
                     <div className="p-3 bg-blue-50 text-blue-700 rounded-md">
-                      <p className="text-sm font-medium mb-2">Variables disponibles:</p>
+                      <p className="text-sm font-medium mb-2">Available variables:</p>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div><code>{'{parentName}'}</code> - Nombre del padre</div>
-                        <div><code>{'{studentName}'}</code> - Nombre del estudiante</div>
-                        <div><code>{'{teamName}'}</code> - Nombre del equipo</div>
-                        <div><code>{'{practiceDate}'}</code> - Fecha de la práctica</div>
-                        <div><code>{'{practiceTime}'}</code> - Hora de la práctica</div>
-                        <div><code>{'{coachName}'}</code> - Nombre del coach</div>
+                        <div><code>{'{parentName}'}</code> - Parent name</div>
+                        <div><code>{'{studentName}'}</code> - Student name</div>
+                        <div><code>{'{teamName}'}</code> - Team name</div>
+                        <div><code>{'{practiceDate}'}</code> - Practice date</div>
+                        <div><code>{'{practiceTime}'}</code> - Practice time</div>
+                        <div><code>{'{coachName}'}</code> - Coach name</div>
                       </div>
                     </div>
 
                     <div className="border rounded-lg p-4">
-                      <Label className="text-sm font-medium">Vista previa del email:</Label>
+                      <Label className="text-sm font-medium">Email preview:</Label>
                       <div 
                         className="mt-2 prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ 
                           __html: emailTemplate.html
-                            .replace(/{parentName}/g, 'Juan Pérez')
-                            .replace(/{studentName}/g, 'María Pérez')
+                            .replace(/{parentName}/g, 'John Doe')
+                            .replace(/{studentName}/g, 'Jane Doe')
                             .replace(/{teamName}/g, teamName)
-                            .replace(/{practiceDate}/g, 'Lunes, 15 de Enero')
+                            .replace(/{practiceDate}/g, 'Monday, January 15th')
                             .replace(/{practiceTime}/g, '3:00 PM - 4:30 PM')
-                            .replace(/{coachName}/g, coachInfo?.name || 'Sin asignar')
+                            .replace(/{coachName}/g, coachInfo?.name || 'Not assigned')
                         }}
                       />
                     </div>
@@ -609,14 +609,14 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                         ) : (
                           <Mail className="h-4 w-4 mr-2" />
                         )}
-                        Enviar a {parents.length} padre{parents.length !== 1 ? 's' : ''}
+                        Send to {parents.length} parent{parents.length !== 1 ? 's' : ''}
                       </Button>
                     </div>
 
                     {parents.length === 0 && (
                       <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-700 rounded-md">
                         <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm">No hay participantes registrados en este equipo</span>
+                        <span className="text-sm">No participants registered in this team</span>
                       </div>
                     )}
                   </CardContent>

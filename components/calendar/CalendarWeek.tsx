@@ -62,7 +62,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
   
   const { toast } = useToast()
 
-  // Detectar móvil
+  // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640)
@@ -74,7 +74,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Generar colores únicos para equipos
+  // Generate unique colors for teams
   const getTeamColor = useCallback((teamid: string) => {
     const colors = [
       { bg: '#3B82F6', border: '#2563EB', text: '#FFFFFF' }, // Blue
@@ -95,18 +95,18 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
     return colors[Math.abs(hash) % colors.length]
   }, [])
 
-  // Cargar datos optimizado
+  // Load data optimized
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Cargar todos los datos en paralelo
+      // Load all data in parallel
       const { sessions, teamNames, coaches: coachesData } = await fetchCalendarData()
       
       setCoaches(coachesData)
 
-      // Procesar eventos - mucho más rápido sin llamadas individuales
+      // Process events - much faster without individual calls
       const calendarEvents: CalendarEvent[] = []
       const uniqueTeams = new Set<string>()
 
@@ -137,7 +137,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         }
       }
 
-      // Crear lista de equipos únicos - sin llamadas adicionales
+      // Create unique teams list - without additional calls
       const teamsData = Array.from(uniqueTeams).map(teamid => ({
         id: teamid,
         name: teamNames[teamid] || `Team ${teamid}`
@@ -147,7 +147,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
       setEvents(calendarEvents)
       
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al cargar datos'
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error loading data'
       setError(errorMessage)
       toast({
         title: "Error",
@@ -159,19 +159,19 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
     }
   }, [getTeamColor, toast])
 
-  // Efecto inicial
+  // Initial effect
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  // Filtrar eventos
+  // Filter events
   const filteredEvents = events.filter(event => {
     const teamMatch = selectedTeam === 'all' || event.extendedProps.teamid === selectedTeam
     const coachMatch = selectedCoach === 'all' || event.extendedProps.coachid === selectedCoach
     return teamMatch && coachMatch
   })
 
-  // Manejar click en evento
+  // Handle event click
   const handleEventClick = useCallback((clickInfo: any) => {
     const { extendedProps } = clickInfo.event
     
@@ -187,12 +187,12 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
     }
   }, [onEventClick])
 
-  // Función para refrescar
+  // Function to refresh
   const handleRefresh = useCallback(() => {
     loadData()
   }, [loadData])
 
-  // Función para cambiar vista en móvil
+  // Function to change view on mobile
   const toggleView = useCallback(() => {
     setCurrentView(prev => prev === 'timeGridWeek' ? 'timeGridDay' : 'timeGridWeek')
   }, [])
@@ -203,12 +203,12 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Calendario de Prácticas
+            Practice Calendar
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Skeleton para filtros */}
+            {/* Skeleton for filters */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 bg-muted rounded animate-pulse" />
@@ -221,7 +221,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
               </div>
             </div>
             
-            {/* Skeleton para calendario */}
+            {/* Skeleton for calendar */}
             <div className="space-y-2">
               <div className="h-12 bg-muted rounded animate-pulse" />
               <div className="grid grid-cols-7 gap-2">
@@ -234,7 +234,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
             <div className="flex items-center justify-center py-4">
               <div className="flex flex-col items-center gap-2">
                 <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Cargando prácticas...</p>
+                <p className="text-sm text-muted-foreground">Loading practices...</p>
               </div>
             </div>
           </div>
@@ -249,7 +249,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Calendario de Prácticas
+            Practice Calendar
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -257,7 +257,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
             <p className="text-destructive text-center">{error}</p>
             <Button onClick={handleRefresh} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
-              Reintentar
+              Retry
             </Button>
           </div>
         </CardContent>
@@ -271,19 +271,19 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Calendario de Prácticas
+            Practice Calendar
           </CardTitle>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-            {/* Filtros */}
+            {/* Filters */}
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={selectedTeam} onValueChange={setSelectedTeam}>
                 <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Equipo" />
+                  <SelectValue placeholder="Team" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los equipos</SelectItem>
+                  <SelectItem value="all">All teams</SelectItem>
                   {teams.map(team => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
@@ -297,7 +297,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
                   <SelectValue placeholder="Coach" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los coaches</SelectItem>
+                  <SelectItem value="all">All coaches</SelectItem>
                   {coaches.map(coach => (
                     <SelectItem key={coach.id} value={coach.id}>
                       {coach.name}
@@ -314,7 +314,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
                   variant="outline"
                   size="sm"
                 >
-                  {currentView === 'timeGridWeek' ? 'Vista Día' : 'Vista Semana'}
+                  {currentView === 'timeGridWeek' ? 'Day View' : 'Week View'}
                 </Button>
               )}
               
@@ -328,7 +328,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         {filteredEvents.length > 0 && (
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="secondary">
-              {filteredEvents.length} práctica{filteredEvents.length !== 1 ? 's' : ''}
+              {filteredEvents.length} practice{filteredEvents.length !== 1 ? 's' : ''}
             </Badge>
           </div>
         )}
@@ -365,11 +365,11 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
               minute: '2-digit',
               meridiem: 'short'
             }}
-            locale="es"
+            locale="en"
             buttonText={{
-              today: 'Hoy',
-              week: 'Semana',
-              day: 'Día'
+              today: 'Today',
+              week: 'Week',
+              day: 'Day'
             }}
             eventDisplay="block"
             eventMaxStack={3}
@@ -384,9 +384,9 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         {filteredEvents.length === 0 && (
           <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
             <Calendar className="h-8 w-8 mb-2" />
-            <p>No hay prácticas programadas</p>
+            <p>No practices scheduled</p>
             {(selectedTeam !== 'all' || selectedCoach !== 'all') && (
-              <p className="text-sm">Intenta cambiar los filtros</p>
+              <p className="text-sm">Try changing the filters</p>
             )}
           </div>
         )}

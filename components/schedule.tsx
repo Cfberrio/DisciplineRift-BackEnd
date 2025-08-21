@@ -12,25 +12,25 @@ export function Schedule() {
   const events = [
     {
       id: 1,
-      title: "Entrenamiento Voleibol",
+      title: "Volleyball Training",
       time: "09:00 - 11:00",
-      location: "Cancha Principal",
+      location: "Main Court",
       type: "training",
       participants: 12,
     },
     {
       id: 2,
-      title: "Clase de Natación",
+      title: "Swimming Class",
       time: "14:00 - 15:30",
-      location: "Piscina",
+      location: "Pool",
       type: "class",
       participants: 8,
     },
     {
       id: 3,
-      title: "Torneo Juvenil",
+      title: "Youth Tournament",
       time: "16:00 - 18:00",
-      location: "Cancha 2",
+      location: "Court 2",
       type: "tournament",
       participants: 24,
     },
@@ -52,13 +52,13 @@ export function Schedule() {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "training":
-        return "Entrenamiento"
+        return "Training"
       case "class":
-        return "Clase"
+        return "Class"
       case "tournament":
-        return "Torneo"
+        return "Tournament"
       default:
-        return "Evento"
+        return "Event"
     }
   }
 
@@ -66,8 +66,8 @@ export function Schedule() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-lg">Agenda</CardTitle>
-          <CardDescription>Próximos eventos de hoy</CardDescription>
+          <CardTitle className="text-lg">Schedule</CardTitle>
+          <CardDescription>Today's upcoming events</CardDescription>
         </div>
         <Button 
           variant="outline" 
@@ -76,7 +76,7 @@ export function Schedule() {
           className="flex items-center gap-2"
         >
           <Calendar className="h-4 w-4" />
-          Ver calendario
+          View calendar
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -97,7 +97,7 @@ export function Schedule() {
                   {event.location}
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-1">{event.participants} participantes</p>
+              <p className="text-xs text-gray-400 mt-1">{event.participants} participants</p>
             </div>
           </div>
         ))}
