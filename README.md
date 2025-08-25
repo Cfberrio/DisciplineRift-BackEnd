@@ -119,15 +119,19 @@ La aplicación estará disponible en `http://localhost:3000`
 DisciplineRift-BackEnd/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API Routes
+│   │   ├── applications/        # Endpoints de aplicaciones Drteam
 │   │   ├── schools/             # Endpoints de escuelas
 │   │   ├── services/            # Endpoints de servicios
 │   │   ├── sessions/            # Endpoints de sesiones
-│   │   └── staff/               # Endpoints de personal
+│   │   ├── staff/               # Endpoints de personal
+│   │   └── resume/              # Endpoint proxy para descarga de PDFs
+│   ├── applications/            # Página de gestión de aplicaciones
 │   ├── login/                   # Página de login
 │   ├── servicios/               # Página de servicios
 │   ├── escuelas/                # Página de escuelas
 │   └── staff/                   # Página de personal
 ├── components/                   # Componentes reutilizables
+│   ├── applications/            # Componentes de gestión de aplicaciones
 │   ├── auth/                    # Componentes de autenticación
 │   ├── ui/                      # Componentes de interfaz
 │   └── navigation/              # Componentes de navegación
@@ -183,6 +187,11 @@ npm run lint         # Ejecuta ESLint
 - `PUT /api/services/[id]` - Actualizar servicio
 - `DELETE /api/services/[id]` - Eliminar servicio
 
+### Applications (Drteam)
+- `GET /api/applications` - Obtener aplicaciones con filtros y paginación
+- `GET /api/applications/sports` - Obtener lista de deportes únicos
+- `GET /api/resume?id={id}` - Descargar PDF del resume (endpoint proxy)
+
 ### Sesiones
 - `GET /api/sessions` - Obtener sesiones
 - `POST /api/sessions` - Crear nueva sesión
@@ -229,6 +238,35 @@ npm run lint         # Ejecuta ESLint
 1. Conecta tu repositorio
 2. Configura el comando de build: `npm run build`
 3. Configura las variables de entorno
+
+## 📋 Sección Applications (Drteam)
+
+### Descripción
+La sección Applications proporciona una interfaz completa para gestionar las aplicaciones del formulario Drteam, permitiendo visualizar, buscar, filtrar y descargar los PDFs de resume de los aplicantes.
+
+### Características
+- **Listado completo**: Visualización de todas las aplicaciones con paginación
+- **Búsqueda avanzada**: Filtro por nombre, apellido, email o número de teléfono
+- **Filtro por deporte**: Selector dinámico basado en los deportes registrados
+- **Descarga de PDFs**: Botón de descarga para los archivos de resume
+- **Paginación server-side**: Navegación eficiente con 10/20/50 elementos por página
+- **Estados responsivos**: Loading, empty state y manejo de errores
+
+### Estructura de datos
+La tabla `public."Drteam"` contiene:
+- `id` (bigint, PK)
+- `firstName`, `lastName` - Datos personales
+- `number` - Número de teléfono  
+- `currentAddre` - Dirección actual
+- `sport` - Deporte de interés
+- `description` - Descripción del aplicante
+- `resume` - Ruta del archivo PDF en Storage bucket `resume`
+- `email` - Correo electrónico
+
+### Acceso
+- **Ruta**: `/applications`
+- **Permisos**: Requiere autenticación de administrador
+- **Bucket**: El bucket `resume` es público (solo lectura)
 
 ### Docker
 ```dockerfile
