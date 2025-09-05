@@ -10,6 +10,7 @@ export interface Session {
   daysofweek: string;
   repeat: string;
   coachid: string | null;
+  cancel?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -34,6 +35,7 @@ export interface UpdateSessionData {
   daysofweek?: string;
   repeat?: string;
   coachid?: string | null;
+  cancel?: string | null;
 }
 
 class SessionService {
@@ -246,6 +248,8 @@ class SessionService {
         updateData.repeat = sessionData.repeat;
       if (sessionData.coachid !== undefined)
         updateData.coachid = sessionData.coachid;
+      if (sessionData.cancel !== undefined)
+        updateData.cancel = sessionData.cancel;
 
       console.log(
         "[SERVER] SessionService - Prepared update data:",
@@ -340,6 +344,66 @@ class SessionService {
         "[SERVER] SessionService - Error in deleteByTeamId:",
         error
       );
+      throw error;
+    }
+  }
+
+  async cancelDate(sessionid: string, dateToCancel: string): Promise<Session> {
+    try {
+      console.log(
+        "[SERVER] SessionService - Canceling date for session:",
+        { sessionid, dateToCancel }
+      );
+      
+      // First get the current session
+      const session = await this.getByIdServer(sessionid);
+      if (!session) {
+        throw new Error("Session not found");
+      }
+
+      // Parse existing canceled dates
+      const existingCanceled = session.cancel ? session.cancel.split(',').map(d => d.trim()) : [];
+      
+      // Add new canceled date if not already present
+      if (!existingCanceled.includes(dateToCancel)) {
+        existingCanceled.push(dateToCancel);
+      }
+
+      // Update the session with new canceled dates
+      const updatedCancelString = existingCanceled.join(',');
+      
+      return await this.update(sessionid, { cancel: updatedCancelString });
+    } catch (error) {
+      console.error("[SERVER] SessionService - Error in cancelDate:", error);
+      throw error;
+    }
+  }
+
+  async restoreDate(sessionid: string, dateToRestore: string): Promise<Session> {
+    try {
+      console.log(
+        "[SERVER] SessionService - Restoring date for session:",
+        { sessionid, dateToRestore }
+      );
+      
+      // First get the current session
+      const session = await this.getByIdServer(sessionid);
+      if (!session) {
+        throw new Error("Session not found");
+      }
+
+      // Parse existing canceled dates
+      const existingCanceled = session.cancel ? session.cancel.split(',').map(d => d.trim()) : [];
+      
+      // Remove the date to restore
+      const updatedCanceled = existingCanceled.filter(date => date !== dateToRestore);
+      
+      // Update the session with new canceled dates (empty string if no cancellations)
+      const updatedCancelString = updatedCanceled.length > 0 ? updatedCanceled.join(',') : null;
+      
+      return await this.update(sessionid, { cancel: updatedCancelString });
+    } catch (error) {
+      console.error("[SERVER] SessionService - Error in restoreDate:", error);
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Session } from '@/lib/db/session-service'
+import type { SessionExclusion } from '@/lib/db/session-exclusions-service'
 
 export interface SessionRow {
   sessionid: string
@@ -11,6 +12,7 @@ export interface SessionRow {
   daysofweek?: string | null
   repeat?: string | null
   coachid?: string | null
+  cancel?: string | null
 }
 
 export interface UpdateSessionInput {
@@ -336,11 +338,11 @@ export async function fetchCalendarData(): Promise<{
   coaches: Array<{ id: string; name: string; email?: string }>
 }> {
   try {
-    // Cargar sesiones y coaches en paralelo
+    // Cargar sesiones y coaches en paralelo (incluir columna cancel)
     const [sessionsResult, coachesResult] = await Promise.all([
       supabase
         .from('session')
-        .select('sessionid, teamid, startdate, enddate, starttime, endtime, daysofweek, repeat, coachid')
+        .select('sessionid, teamid, startdate, enddate, starttime, endtime, daysofweek, repeat, coachid, cancel')
         .order('startdate')
         .limit(1000),
       supabase

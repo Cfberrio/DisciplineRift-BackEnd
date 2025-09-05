@@ -29,7 +29,8 @@ import {
   Save,
   Loader2,
   Users,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react'
 
 import { 
@@ -83,6 +84,8 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
   const [saving, setSaving] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [showEmailEditor, setShowEmailEditor] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   
   const [editForm, setEditForm] = useState<EditFormData>({
     startdate: '',
@@ -303,6 +306,55 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
     }
   }
 
+  // Handle single occurrence cancellation
+  const handleCancelOccurrence = async () => {
+    if (!session || !eventInfo) return
+    
+    try {
+      setDeleting(true)
+      
+      // Convert the occurrence date to YYYY-MM-DD format
+      const occurrenceDate = new Date(eventInfo.start)
+      const dateString = occurrenceDate.toISOString().split('T')[0]
+      
+      const response = await fetch(`/api/sessions/${session.sessionid}/cancel-date`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date_to_cancel: dateString
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Error canceling date for session')
+      }
+      
+      toast({
+        title: "Practice canceled",
+        description: `The practice for ${occurrenceDate.toLocaleDateString()} has been canceled`
+      })
+      
+      // Close drawer and notify parent to reload calendar
+      onClose()
+      if (onEventUpdated) {
+        onEventUpdated()
+      }
+      
+    } catch (error) {
+      console.error('Error canceling date for session:', error)
+      toast({
+        title: "Error",
+        description: "Error canceling practice",
+        variant: "destructive"
+      })
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
+
   // Get upcoming occurrences
   const getUpcomingOccurrences = () => {
     if (!session) return []
@@ -354,10 +406,11 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
         ) : (
           <div className="mt-6">
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="edit">Edit</TabsTrigger>
                 <TabsTrigger value="email">Email</TabsTrigger>
+                <TabsTrigger value="delete">Delete</TabsTrigger>
               </TabsList>
 
               <TabsContent value="details" className="space-y-4">
@@ -617,6 +670,106 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
                       <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-700 rounded-md">
                         <AlertCircle className="h-4 w-4" />
                         <span className="text-sm">No participants registered in this team</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="delete" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                      <Trash2 className="h-5 w-5" />
+                      Cancel This Practice
+                    </CardTitle>
+                    <CardDescription>
+                      This will cancel only this specific practice date
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-md">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-destructive">
+                            Warning: This action cannot be undone
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Canceling this practice will:
+                          </p>
+                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                            <li>Remove only this specific practice date ({eventInfo ? new Date(eventInfo.start).toLocaleDateString() : 'selected date'})</li>
+                            <li>Keep all other practices in the series</li>
+                            <li>This can be restored later if needed</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {session && eventInfo && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">Practice to be canceled:</p>
+                        <div className="bg-muted p-3 rounded-md space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">Team:</span>
+                            <span className="text-sm">{teamName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">Date:</span>
+                            <span className="text-sm">{new Date(eventInfo.start).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">Time:</span>
+                            <span className="text-sm">{session.starttime} - {session.endtime}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">Coach:</span>
+                            <span className="text-sm">{coachInfo?.name || 'No coach assigned'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!confirmDelete ? (
+                      <div className="flex gap-2 pt-4">
+                        <Button
+                          onClick={() => setConfirmDelete(true)}
+                          variant="destructive"
+                          className="flex-1"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Cancel This Practice
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 pt-4">
+                        <p className="text-sm font-medium text-center">
+                          Are you absolutely sure you want to cancel this practice?
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setConfirmDelete(false)}
+                            variant="outline"
+                            className="flex-1"
+                            disabled={deleting}
+                          >
+                            No, Keep Practice
+                          </Button>
+                          <Button
+                            onClick={handleCancelOccurrence}
+                            variant="destructive"
+                            className="flex-1"
+                            disabled={deleting}
+                          >
+                            {deleting ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 mr-2" />
+                            )}
+                            Yes, Cancel Practice
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </CardContent>

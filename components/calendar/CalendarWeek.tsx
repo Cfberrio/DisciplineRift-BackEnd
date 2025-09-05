@@ -114,6 +114,7 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
         const teamName = teamNames[session.teamid] || `Team ${session.teamid}`
         uniqueTeams.add(session.teamid)
         
+        // expandOccurrences now handles canceled dates from the session.cancel column
         const occurrences = expandOccurrences(session)
         const teamColor = getTeamColor(session.teamid)
         

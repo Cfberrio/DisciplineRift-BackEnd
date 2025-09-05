@@ -45,13 +45,16 @@ export function parseDaysOfWeek(str: string): number[] {
 /**
  * Expande las ocurrencias de una sesión basándose en las fechas de inicio/fin y días de la semana
  */
-export function expandOccurrences(session: {
-  startdate: string
-  enddate?: string | null
-  starttime: string
-  endtime: string
-  daysofweek?: string | null
-}): { start: Date; end: Date; ymd: string }[] {
+export function expandOccurrences(
+  session: {
+    startdate: string
+    enddate?: string | null
+    starttime: string
+    endtime: string
+    daysofweek?: string | null
+    cancel?: string | null
+  }
+): { start: Date; end: Date; ymd: string }[] {
   const zone = 'America/New_York'
   
   const startDate = DateTime.fromISO(session.startdate, { zone }).startOf('day')
@@ -60,6 +63,11 @@ export function expandOccurrences(session: {
     : startDate
     
   const daysOfWeek = parseDaysOfWeek(session.daysofweek || '')
+  
+  // Parsear fechas canceladas de la columna cancel
+  const canceledDates = session.cancel 
+    ? new Set(session.cancel.split(',').map(date => date.trim()))
+    : new Set<string>()
   
   // Parsear las horas de inicio y fin
   const [startHour, startMinute] = (session.starttime || '00:00').split(':').map(n => parseInt(n, 10))
@@ -72,7 +80,11 @@ export function expandOccurrences(session: {
     // Si no hay días específicos o si el día actual está en la lista
     const shouldInclude = daysOfWeek.length === 0 || daysOfWeek.includes(currentDate.weekday)
     
-    if (shouldInclude) {
+    // Verificar si esta fecha está cancelada
+    const dateString = currentDate.toFormat('yyyy-LL-dd')
+    const isCanceled = canceledDates.has(dateString)
+    
+    if (shouldInclude && !isCanceled) {
       const sessionStart = currentDate.set({ hour: startHour, minute: startMinute })
       const sessionEnd = currentDate.set({ hour: endHour, minute: endMinute })
       
