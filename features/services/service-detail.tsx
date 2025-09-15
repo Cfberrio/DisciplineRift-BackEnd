@@ -105,7 +105,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
   const generateRosterPDF = async () => {
     if (enrolledStudents.length === 0) {
-      alert("No hay estudiantes matriculados para generar el roster");
+      alert("No enrolled students to generate the roster");
       return;
     }
 
@@ -117,12 +117,12 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       // Add logo/header (you can customize this)
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
-      doc.text("D1 SPORTS & ATHLETICS", 20, 25);
+      doc.text("Discipline Rift", 20, 25);
 
       // Service/Season title
       doc.setFontSize(16);
-      doc.text(`${service.name || "Roster del Equipo"}`, 20, 35);
-      doc.text(`${service.school || "Escuela"} Roster`, 20, 45);
+      doc.text(`${service.name || "Team Roster"}`, 20, 35);
+      doc.text(`${service.school || "School"} Roster`, 20, 45);
 
       // Prepare table data
       const tableData = enrolledStudents.map((student, index) => [
@@ -188,12 +188,12 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.text(
-        `Total de Participantes: ${enrolledStudents.length}`,
+        `Total Participants: ${enrolledStudents.length}`,
         20,
         finalY + 15
       );
       doc.text(
-        `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
+        `Generated on: ${new Date().toLocaleDateString("en-US")}`,
         20,
         finalY + 25
       );
@@ -201,7 +201,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       if (service.sessions && service.sessions.length > 0) {
         const session = service.sessions[0];
         doc.text(
-          `Horario: ${session.daysofweek} ${session.starttime} - ${session.endtime}`,
+          `Schedule: ${session.daysofweek} ${session.starttime} - ${session.endtime}`,
           20,
           finalY + 35
         );
@@ -209,14 +209,14 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
       // Generate filename
       const fileName = `roster_${
-        service.name?.replace(/\s+/g, "_") || "equipo"
+        service.name?.replace(/\s+/g, "_") || "team"
       }_${new Date().toISOString().split("T")[0]}.pdf`;
 
       // Save the PDF
       doc.save(fileName);
     } catch (error) {
-      console.error("Error generando PDF:", error);
-      alert("Error al generar el PDF. Por favor intenta de nuevo.");
+      console.error("Error generating PDF:", error);
+      alert("Error generating PDF. Please try again.");
     } finally {
       setIsGeneratingPdf(false);
     }
