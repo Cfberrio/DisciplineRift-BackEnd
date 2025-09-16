@@ -9,6 +9,7 @@ import { StaffProvider } from "@/contexts/staff-context";
 import MetricsProvider from "@/components/metrics-provider";
 import DevWDYR from "@/components/dev-wdyr";
 import { Toaster } from "@/components/ui/toaster";
+import { ConnectionManager } from "@/components/connection-manager";
 
 // Force dynamic rendering for the entire app
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export default function RootLayout({
             <SchoolsProvider>
               <ServicesProvider>
                 <StaffProvider>
+                  <ConnectionManager />
                   {children}
                   <Toaster />
                 </StaffProvider>

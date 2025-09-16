@@ -23,15 +23,19 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchStaff = async () => {
+  const fetchStaff = async (retryCount = 0) => {
+    const maxRetries = 2;
+    const baseTimeout = 30000; // 30 seconds base timeout
+    const timeoutMultiplier = retryCount + 1;
+    
     try {
       setLoading(true);
       setError(null);
-      console.log("StaffContext: Fetching staff...");
+      console.log("StaffContext: Fetching staff...", retryCount > 0 ? `(retry ${retryCount})` : "");
 
-      // Add timeout to prevent hanging requests
+      // Progressive timeout increase with retries
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout")), 10000); // 10 seconds
+        setTimeout(() => reject(new Error("Request timeout")), baseTimeout * timeoutMultiplier);
       });
 
       const dataPromise = staffApi.getAll();
@@ -42,23 +46,38 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       // Ensure we always have an array
       const staffArray = Array.isArray(data) ? data : [];
       setStaff(staffArray);
+      setError(null); // Clear any previous errors on success
     } catch (err) {
       console.error("StaffContext: Error fetching staff:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Error desconocido";
+      const errorMessage = err instanceof Error ? err.message : "Error desconocido";
+      
+      // Retry logic for timeout and network errors
+      if (retryCount < maxRetries && (errorMessage.includes("timeout") || errorMessage.includes("network") || errorMessage.includes("fetch"))) {
+        console.log(`StaffContext: Retrying fetch staff in ${(retryCount + 1) * 2} seconds...`);
+        setTimeout(() => {
+          fetchStaff(retryCount + 1);
+        }, (retryCount + 1) * 2000); // Progressive delay: 2s, 4s, 6s
+        return; // Don't set error state yet, we're retrying
+      }
+      
       setError(errorMessage);
-      setStaff([]); // Always set empty array on error
+      setStaff([]); // Always set empty array on final error
 
-      // Only show toast for non-timeout errors
-      if (!errorMessage.includes("timeout")) {
+      // Only show toast for final errors (not during retries)
+      if (retryCount >= maxRetries) {
         toast({
           title: "Error",
-          description: "No se pudieron cargar los miembros del staff",
+          description: errorMessage.includes("timeout") 
+            ? "La conexión tardó demasiado. Revisa tu conexión a internet."
+            : "No se pudieron cargar los miembros del staff",
           variant: "destructive",
         });
       }
     } finally {
-      setLoading(false);
+      // Only set loading false if this is the final attempt or success
+      if (retryCount >= maxRetries || !error) {
+        setLoading(false);
+      }
     }
   };
 

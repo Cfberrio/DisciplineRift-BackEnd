@@ -28,46 +28,61 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchSchools = async () => {
+  const fetchSchools = async (retryCount = 0) => {
+    const maxRetries = 2;
+    const baseTimeout = 30000; // 30 seconds base timeout
+    const timeoutMultiplier = retryCount + 1;
+    
     try {
       setLoading(true);
       setError(null);
-      console.log("SchoolsContext: Fetching schools...");
+      console.log("SchoolsContext: Fetching schools...", retryCount > 0 ? `(retry ${retryCount})` : "");
 
-      // Add timeout to prevent hanging requests
+      // Progressive timeout increase with retries
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout")), 10000); // 10 seconds
+        setTimeout(() => reject(new Error("Request timeout")), baseTimeout * timeoutMultiplier);
       });
 
       const dataPromise = schoolsApi.getAll();
       const data = (await Promise.race([dataPromise, timeoutPromise])) as any;
 
-      console.log(
-        "SchoolsContext: Fetched schools:",
-        data?.length || 0,
-        "records"
-      );
+      console.log("SchoolsContext: Fetched schools:", data?.length || 0, "records");
 
       // Ensure we always have an array
       const schoolsArray = Array.isArray(data) ? data : [];
       setSchools(schoolsArray);
+      setError(null); // Clear any previous errors on success
     } catch (err) {
       console.error("SchoolsContext: Error fetching schools:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Error desconocido";
+      const errorMessage = err instanceof Error ? err.message : "Error desconocido";
+      
+      // Retry logic for timeout and network errors
+      if (retryCount < maxRetries && (errorMessage.includes("timeout") || errorMessage.includes("network") || errorMessage.includes("fetch"))) {
+        console.log(`SchoolsContext: Retrying fetch schools in ${(retryCount + 1) * 2} seconds...`);
+        setTimeout(() => {
+          fetchSchools(retryCount + 1);
+        }, (retryCount + 1) * 2000); // Progressive delay: 2s, 4s, 6s
+        return; // Don't set error state yet, we're retrying
+      }
+      
       setError(errorMessage);
-      setSchools([]); // Always set empty array on error
+      setSchools([]); // Always set empty array on final error
 
-      // Only show toast for non-timeout errors
-      if (!errorMessage.includes("timeout")) {
+      // Only show toast for final errors (not during retries)
+      if (retryCount >= maxRetries) {
         toast({
           title: "Error",
-          description: "No se pudieron cargar las escuelas",
+          description: errorMessage.includes("timeout") 
+            ? "La conexión tardó demasiado. Revisa tu conexión a internet."
+            : "No se pudieron cargar las escuelas",
           variant: "destructive",
         });
       }
     } finally {
-      setLoading(false);
+      // Only set loading false if this is the final attempt or success
+      if (retryCount >= maxRetries || !error) {
+        setLoading(false);
+      }
     }
   };
 

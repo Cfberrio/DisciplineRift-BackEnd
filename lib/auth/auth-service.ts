@@ -1,4 +1,4 @@
-import { createClient } from "../supabase/client"
+import { supabase } from "../supabase/client"
 import { createServerSupabaseClient } from "../supabase/server"
 
 export interface LoginCredentials {
@@ -28,7 +28,7 @@ export interface AuthUser {
 export const authService = {
   async signIn(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const supabase = createClient()
+      // Use the imported supabase instance
 
       // Validate input
       if (!credentials.email || !credentials.password) {
@@ -104,7 +104,7 @@ export const authService = {
 
   async signOut(): Promise<AuthResponse> {
     try {
-      const supabase = createClient()
+      // Use the imported supabase instance
       const { error } = await supabase.auth.signOut()
 
       if (error) {
@@ -129,7 +129,7 @@ export const authService = {
 
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const supabase = createClient()
+      // Use the imported supabase instance
 
       // First check if we have a session
       const {
@@ -182,7 +182,7 @@ export const authService = {
 export const authServer = {
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const supabase = await createServerSupabaseClient()
+      const supabase = createServerSupabaseClient()
 
       // Get session first
       const {
@@ -230,7 +230,7 @@ export const authServer = {
 
   async getSession() {
     try {
-      const supabase = await createServerSupabaseClient()
+      const supabase = createServerSupabaseClient()
       const {
         data: { session },
         error,

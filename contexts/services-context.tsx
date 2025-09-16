@@ -44,14 +44,19 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchServices = async () => {
+  const fetchServices = async (retryCount = 0) => {
+    const maxRetries = 2;
+    const baseTimeout = 45000; // 45 seconds base timeout for complex query
+    const timeoutMultiplier = retryCount + 1;
+    
     try {
       setIsLoading(true);
       setError(null);
+      console.log("ServicesContext: Fetching services...", retryCount > 0 ? `(retry ${retryCount})` : "");
 
-      // Add timeout to prevent hanging requests
+      // Progressive timeout increase with retries
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout")), 15000); // 15 seconds for complex query
+        setTimeout(() => reject(new Error("Request timeout")), baseTimeout * timeoutMultiplier);
       });
 
       const teamsPromise = supabase.from("team").select(`
@@ -114,7 +119,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         {} as Record<string, number>
       );
 
-      const sessionsByTeam = (allSessions || []).reduce((acc, session: any) => {
+      const sessionsByTeam = (allSessions || []).reduce((acc: Record<string, any[]>, session: any) => {
         const teamId = String(session.teamid);
         if (!acc[teamId]) acc[teamId] = [];
         acc[teamId].push(session);
@@ -172,12 +177,27 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         servicesWithDetails
       );
       setServices(servicesWithDetails);
-    } catch (error) {
-      console.error("ServicesContext: Error fetching services:", error);
-      setError(error as Error);
-      setServices([]); // Always set to empty array on error
+      setError(null); // Clear any previous errors on success
+    } catch (err) {
+      console.error("ServicesContext: Error fetching services:", err);
+      const errorMessage = err instanceof Error ? err.message : "Error desconocido";
+      
+      // Retry logic for timeout and network errors
+      if (retryCount < maxRetries && (errorMessage.includes("timeout") || errorMessage.includes("network") || errorMessage.includes("fetch"))) {
+        console.log(`ServicesContext: Retrying fetch services in ${(retryCount + 1) * 2} seconds...`);
+        setTimeout(() => {
+          fetchServices(retryCount + 1);
+        }, (retryCount + 1) * 2000); // Progressive delay: 2s, 4s, 6s
+        return; // Don't set error state yet, we're retrying
+      }
+      
+      setError(err as Error);
+      setServices([]); // Always set to empty array on final error
     } finally {
-      setIsLoading(false);
+      // Only set loading false if this is the final attempt or success
+      if (retryCount >= maxRetries || !error) {
+        setIsLoading(false);
+      }
     }
   };
 
