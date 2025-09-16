@@ -36,10 +36,10 @@ export function ServicesFilters({ onFilterChange, onManageCategories, categories
       <div className="flex items-center gap-2 w-full sm:w-auto">
         <Select defaultValue="all" onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Todas las categorías" />
+            <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las categorías</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {availableCategories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -48,7 +48,7 @@ export function ServicesFilters({ onFilterChange, onManageCategories, categories
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={onManageCategories} className="whitespace-nowrap">
-          Administrar Categorías
+          Manage Categories
         </Button>
       </div>
       <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -60,7 +60,7 @@ export function ServicesFilters({ onFilterChange, onManageCategories, categories
         </Button>
         <div className="relative w-full sm:w-auto">
           <Input
-            placeholder="Buscar servicios..."
+            placeholder="Search services..."
             className="pl-8 w-full sm:w-[200px]"
             value={search}
             onChange={handleSearchChange}

@@ -102,12 +102,12 @@ function EscuelasInner() {
         <Card>
           <CardHeader className="flex items-center justify-between gap-4">
             <div>
-              <CardTitle>Lista de Escuelas</CardTitle>
-              <CardDescription>Administra todas las escuelas desde aquí.</CardDescription>
+              <CardTitle>Schools List</CardTitle>
+              <CardDescription>Manage all schools from here.</CardDescription>
             </div>
             <Button onClick={openCreate} className="gap-2">
               <Plus className="h-4 w-4" />
-              Añadir Nueva Escuela
+              Add New School
             </Button>
           </CardHeader>
           <CardContent>

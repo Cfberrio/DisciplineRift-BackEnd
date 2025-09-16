@@ -7,35 +7,35 @@ import { TrendingUp, TrendingDown, Users, DollarSign, Calendar, FileText } from 
 export function AnalyticsSection() {
   const stats = [
     {
-      title: "Visitas",
+      title: "Visits",
       value: "264",
       change: "+5.8%",
       trend: "up",
-      description: "0 hoy • 7 ayer",
+      description: "0 today • 7 yesterday",
       icon: Users,
     },
     {
-      title: "Ventas",
+      title: "Sales",
       value: "$10,165",
       change: "+4",
       trend: "up",
-      description: "$0.00 hoy • $0.00 ayer",
+      description: "$0.00 today • $0.00 yesterday",
       icon: DollarSign,
     },
     {
-      title: "Reservas",
+      title: "Bookings",
       value: "52",
       change: "+6.1%",
       trend: "up",
-      description: "0 hoy • 0 ayer",
+      description: "0 today • 0 yesterday",
       icon: Calendar,
     },
     {
-      title: "Formularios",
+      title: "Forms",
       value: "12",
       change: "+5.9%",
       trend: "up",
-      description: "0 hoy • 1 ayer",
+      description: "0 today • 1 yesterday",
       icon: FileText,
     },
   ]
@@ -44,10 +44,10 @@ export function AnalyticsSection() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Analíticas</h2>
-          <p className="text-gray-600">Estadísticas de los últimos 30 días</p>
+          <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+          <p className="text-gray-600">Statistics from the last 30 days</p>
         </div>
-        <Button variant="outline">Ver detalles</Button>
+        <Button variant="outline">View Details</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -8,35 +8,35 @@ export function ActivityFeed() {
     {
       id: 1,
       type: "email",
-      title: "Campaña de Email",
-      description: '"Oferta Especial" - Enviado el 13 de Abril, 2025',
-      stats: "Entregados: 1.4k • Tasa de apertura: 55% • Tasa de clics: 1%",
+      title: "Email Campaign",
+      description: '"Special Offer" - Sent on April 13, 2025',
+      stats: "Delivered: 1.4k • Open rate: 55% • Click rate: 1%",
       icon: Mail,
-      time: "Hace 2 horas",
+      time: "2 hours ago",
     },
     {
       id: 2,
       type: "performance",
-      title: "Actualización de rendimiento",
-      description: "Han pasado 15 días desde el último email enviado",
+      title: "Performance update",
+      description: "15 days have passed since the last email was sent",
       icon: TrendingUp,
-      time: "Hace 1 día",
+      time: "1 day ago",
     },
     {
       id: 3,
       type: "registration",
-      title: "Nueva inscripción",
-      description: "María González se inscribió en Voleibol Juvenil",
+      title: "New registration",
+      description: "María González registered for Youth Volleyball",
       icon: UserPlus,
-      time: "Hace 2 días",
+      time: "2 days ago",
     },
     {
       id: 4,
       type: "event",
-      title: "Evento programado",
-      description: "Torneo de Primavera - 25 de Abril",
+      title: "Scheduled event",
+      description: "Spring Tournament - April 25",
       icon: Calendar,
-      time: "Hace 3 días",
+      time: "3 days ago",
     },
   ]
 
@@ -58,8 +58,8 @@ export function ActivityFeed() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Feed de actividades</CardTitle>
-        <CardDescription>Actualizaciones recientes</CardDescription>
+        <CardTitle className="text-lg">Activity Feed</CardTitle>
+        <CardDescription>Recent updates</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {activities.map((activity) => (

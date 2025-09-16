@@ -34,7 +34,7 @@ export const authService = {
       if (!credentials.email || !credentials.password) {
         return {
           success: false,
-          error: { message: "Email y contraseña son requeridos" },
+          error: { message: "Email and password are required" },
         }
       }
 
@@ -43,7 +43,7 @@ export const authService = {
       if (!emailRegex.test(credentials.email)) {
         return {
           success: false,
-          error: { message: "Por favor ingresa una dirección de email válida" },
+          error: { message: "Please enter a valid email address" },
         }
       }
 
@@ -79,7 +79,7 @@ export const authService = {
           await supabase.auth.signOut()
           return {
             success: false,
-            error: { message: "No tienes permisos para acceder a esta aplicación" },
+            error: { message: "You don't have permissions to access this application" },
           }
         }
 
@@ -91,13 +91,13 @@ export const authService = {
 
       return {
         success: false,
-        error: { message: "Autenticación fallida. Por favor intenta de nuevo." },
+        error: { message: "Authentication failed. Please try again." },
       }
     } catch (error) {
       console.error("Authentication error:", error)
       return {
         success: false,
-        error: { message: "Error de red. Por favor verifica tu conexión e intenta de nuevo." },
+        error: { message: "Network error. Please check your connection and try again." },
       }
     }
   },
@@ -255,16 +255,16 @@ export const serverAuthService = authServer
 function getAuthErrorMessage(errorMessage: string): string {
   const errorMap: Record<string, string> = {
     "Invalid login credentials":
-      "Email o contraseña incorrectos. Por favor verifica tus credenciales e intenta de nuevo.",
-    "Email not confirmed": "Por favor revisa tu email y haz clic en el enlace de confirmación antes de iniciar sesión.",
+      "Incorrect email or password. Please verify your credentials and try again.",
+    "Email not confirmed": "Please check your email and click the confirmation link before signing in.",
     "Too many requests":
-      "Demasiados intentos de inicio de sesión. Por favor espera unos minutos antes de intentar de nuevo.",
-    "User not found": "No se encontró una cuenta con esta dirección de email.",
-    "Invalid email": "Por favor ingresa una dirección de email válida.",
-    "Weak password": "La contraseña debe tener al menos 6 caracteres.",
-    "Email already registered": "Ya existe una cuenta con este email.",
-    "Network error": "Error de conexión de red. Por favor verifica tu conexión a internet.",
-    "Auth session missing": "Sesión no encontrada. Por favor inicia sesión de nuevo.",
+      "Too many login attempts. Please wait a few minutes before trying again.",
+    "User not found": "No account found with this email address.",
+    "Invalid email": "Please enter a valid email address.",
+    "Weak password": "Password must be at least 6 characters long.",
+    "Email already registered": "An account with this email already exists.",
+    "Network error": "Network connection error. Please check your internet connection.",
+    "Auth session missing": "Session not found. Please sign in again.",
   }
 
   // Check for partial matches
@@ -274,5 +274,5 @@ function getAuthErrorMessage(errorMessage: string): string {
     }
   }
 
-  return "Autenticación fallida. Por favor intenta de nuevo."
+  return "Authentication failed. Please try again."
 }

@@ -39,7 +39,7 @@ export function SchoolForm({ initialData, onSubmit, onCancel, isLoading = false 
     if (!formData.name.trim()) {
       toast({
         title: "Error",
-        description: "El nombre de la escuela es obligatorio",
+        description: "School name is required",
         variant: "destructive",
       })
       return
@@ -48,7 +48,7 @@ export function SchoolForm({ initialData, onSubmit, onCancel, isLoading = false 
     if (!formData.location.trim()) {
       toast({
         title: "Error",
-        description: "La ubicación de la escuela es obligatoria",
+        description: "School location is required",
         variant: "destructive",
       })
       return
@@ -57,8 +57,8 @@ export function SchoolForm({ initialData, onSubmit, onCancel, isLoading = false 
     try {
       await onSubmit(formData)
       toast({
-        title: "Éxito",
-        description: isEditing ? "Escuela actualizada correctamente" : "Escuela creada correctamente",
+        title: "Success",
+        description: isEditing ? "School updated successfully" : "School created successfully",
       })
     } catch (error) {
       console.error("Error submitting form:", error)
@@ -75,24 +75,24 @@ export function SchoolForm({ initialData, onSubmit, onCancel, isLoading = false 
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 p-0">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre de la Escuela *</Label>
+            <Label htmlFor="name">School Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Ej: Deerwood Elementary School"
+              placeholder="Ex: Deerwood Elementary School"
               disabled={isLoading}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Ubicación *</Label>
+            <Label htmlFor="location">Location *</Label>
             <Input
               id="location"
               value={formData.location}
               onChange={(e) => handleChange("location", e.target.value)}
-              placeholder="Ej: 123 Main St, Jacksonville, FL"
+              placeholder="Ex: 123 Main St, Jacksonville, FL"
               disabled={isLoading}
               required
             />
@@ -100,10 +100,10 @@ export function SchoolForm({ initialData, onSubmit, onCancel, isLoading = false 
         </CardContent>
         <CardFooter className="flex justify-between p-0 pt-6">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancelar
+            Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Guardando..." : isEditing ? "Actualizar Escuela" : "Crear Escuela"}
+            {isLoading ? "Saving..." : isEditing ? "Update School" : "Create School"}
           </Button>
         </CardFooter>
       </form>

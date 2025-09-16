@@ -85,16 +85,16 @@ export function StaffDialog({ open, onClose, initialData }: StaffDialogProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Staff" : "Agregar Staff"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Staff" : "Add Staff"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Modifica la información del miembro del staff" : "Agrega un nuevo miembro al staff"}
+            {isEditing ? "Modify the staff member information" : "Add a new staff member"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Nombre *
+                Name *
               </Label>
               <Input
                 id="name"
@@ -118,7 +118,7 @@ export function StaffDialog({ open, onClose, initialData }: StaffDialogProps) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">
-                Teléfono
+                Phone
               </Label>
               <Input
                 id="phone"

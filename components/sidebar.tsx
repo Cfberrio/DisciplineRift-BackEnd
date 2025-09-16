@@ -9,10 +9,10 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { name: "Inicio", href: "/", icon: Home },
-  { name: "Agenda", href: "/agenda", icon: Calendar },
-  { name: "Servicios", href: "/servicios", icon: Users },
-  { name: "Escuelas", href: "/escuelas", icon: GraduationCap },
+  { name: "Home", href: "/", icon: Home },
+  { name: "Schedule", href: "/agenda", icon: Calendar },
+  { name: "Services", href: "/servicios", icon: Users },
+  { name: "Schools", href: "/escuelas", icon: GraduationCap },
   { name: "Staff", href: "/staff", icon: UserCheck },
   { name: "Applications", href: "/applications", icon: FileText },
   { name: "Marketing", href: "/marketing", icon: Mail },
@@ -77,7 +77,7 @@ export function Sidebar() {
           className={cn("w-full justify-start gap-3 text-gray-700 hover:bg-gray-50", collapsed && "justify-center")}
         >
           <LogOut className="h-5 w-5" />
-          {!collapsed && <span>Cerrar Sesión</span>}
+          {!collapsed && <span>Sign Out</span>}
         </Button>
       </div>
     </div>

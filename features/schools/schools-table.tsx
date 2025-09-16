@@ -72,9 +72,9 @@ export function SchoolsTable() {
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-red-500">
-            <p>Error al cargar las escuelas: {error.message}</p>
+            <p>Error loading schools: {error.message}</p>
             <Button onClick={() => window.location.reload()} className="mt-4">
-              Reintentar
+              Retry
             </Button>
           </div>
         </CardContent>

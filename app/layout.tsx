@@ -17,8 +17,8 @@ export const dynamic = "force-dynamic";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Dashboard con Login",
-  description: "Sistema de gestión con autenticación",
+  title: "Dashboard with Login",
+  description: "Management system with authentication",
   generator: "v0.dev",
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="en">
       <body className={inter.className}>
         {process.env.NODE_ENV === 'development' ? <DevWDYR /> : null}
         <MetricsProvider>

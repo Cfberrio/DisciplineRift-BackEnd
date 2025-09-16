@@ -86,7 +86,7 @@ export function ServicesTable() {
   }
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-ES", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(price)
@@ -108,13 +108,13 @@ export function ServicesTable() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "active":
-        return "Activo"
+        return "Active"
       case "inactive":
-        return "Inactivo"
+        return "Inactive"
       case "ended":
-        return "Finalizado"
+        return "Ended"
       default:
-        return "Desconocido"
+        return "Unknown"
     }
   }
 
@@ -123,9 +123,9 @@ export function ServicesTable() {
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-red-600">
-            <p>Error al cargar los servicios: {error.message}</p>
+            <p>Error loading services: {error.message}</p>
             <Button onClick={() => window.location.reload()} className="mt-4">
-              Reintentar
+              Retry
             </Button>
           </div>
         </CardContent>
@@ -139,14 +139,14 @@ export function ServicesTable() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <CardTitle>Gestión de Servicios</CardTitle>
+              <CardTitle>Services Management</CardTitle>
               <CardDescription>
-                Administra todos los servicios deportivos de las escuelas
+                Manage all school sports services
               </CardDescription>
             </div>
             <Button onClick={() => setShowServiceDialog(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              Nuevo Servicio
+              New Service
             </Button>
           </div>
         </CardHeader>
@@ -156,7 +156,7 @@ export function ServicesTable() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, descripción, escuela..."
+                placeholder="Search by name, description, school..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
@@ -168,17 +168,17 @@ export function ServicesTable() {
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="px-3 py-2 border rounded-md bg-background"
               >
-                <option value="all">Todos los estados</option>
-                <option value="active">Activos</option>
-                <option value="inactive">Inactivos</option>
-                <option value="ended">Finalizados</option>
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="ended">Ended</option>
               </select>
               <Button
                 variant="outline"
                 onClick={() => setShowManageCategories(true)}
                 className="whitespace-nowrap"
               >
-                Administrar
+                Manage
               </Button>
             </div>
           </div>

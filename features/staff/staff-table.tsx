@@ -59,9 +59,9 @@ export function StaffTable() {
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-red-500">
-            <p>Error al cargar el staff: {error}</p>
+            <p>Error loading staff: {error}</p>
             <Button onClick={() => window.location.reload()} className="mt-4">
-              Reintentar
+              Retry
             </Button>
           </div>
         </CardContent>
@@ -75,12 +75,12 @@ export function StaffTable() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Gestión de Staff</CardTitle>
-              <CardDescription>Administra los miembros del staff de tu organización</CardDescription>
+              <CardTitle>Staff Management</CardTitle>
+              <CardDescription>Manage your organization's staff members</CardDescription>
             </div>
             <Button onClick={() => setShowStaffDialog(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Agregar Staff
+              Add Staff
             </Button>
           </div>
         </CardHeader>

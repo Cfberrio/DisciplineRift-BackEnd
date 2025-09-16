@@ -9,17 +9,17 @@ export function ServicesFilters() {
       <div className="flex items-center gap-2 w-full sm:w-auto">
         <Select defaultValue="all">
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Todas las categorías" />
+            <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las categorías</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             <SelectItem value="volleyball">Volleyball</SelectItem>
             <SelectItem value="tennis">Tennis</SelectItem>
             <SelectItem value="pickleball">Pickleball</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm">
-          Administrar Categorías
+          Manage Categories
         </Button>
       </div>
       <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -30,7 +30,7 @@ export function ServicesFilters() {
           <ListFilter className="h-4 w-4" />
         </Button>
         <div className="relative w-full sm:w-auto">
-          <Input placeholder="Buscar servicios..." className="pl-8 w-full sm:w-[200px]" />
+          <Input placeholder="Search services..." className="pl-8 w-full sm:w-[200px]" />
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"

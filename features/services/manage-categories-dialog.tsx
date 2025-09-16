@@ -106,8 +106,8 @@ export function ManageCategoriesDialog({
   // Handle bulk service deletion
   const handleDeleteSelectedServices = () => {
     toast({
-      title: "Operación no implementada",
-      description: `La eliminación masiva de ${selectedServices.length} servicios no está implementada en esta demo.`,
+      title: "Operation not implemented",
+      description: `Bulk deletion of ${selectedServices.length} services is not implemented in this demo.`,
       variant: "destructive",
     })
   }
@@ -116,8 +116,8 @@ export function ManageCategoriesDialog({
   const handleBulkStatusChange = (status: "active" | "inactive" | "ended") => {
     if (selectedServices.length === 0) {
       toast({
-        title: "No hay servicios seleccionados",
-        description: "Selecciona al menos un servicio para cambiar su estado.",
+        title: "No services selected",
+        description: "Select at least one service to change its status.",
         variant: "destructive",
       })
       return
@@ -137,11 +137,11 @@ export function ManageCategoriesDialog({
       await onRefresh()
 
       const statusLabel =
-        pendingBulkStatus === "active" ? "activo" : pendingBulkStatus === "inactive" ? "inactivo" : "finalizado"
+        pendingBulkStatus === "active" ? "active" : pendingBulkStatus === "inactive" ? "inactive" : "ended"
 
       toast({
-        title: "Estados actualizados",
-        description: `Se ha cambiado el estado de ${selectedServices.length} servicio${selectedServices.length > 1 ? "s" : ""} a ${statusLabel}.`,
+        title: "Status updated",
+        description: `Status changed for ${selectedServices.length} service${selectedServices.length > 1 ? "s" : ""} to ${statusLabel}.`,
       })
 
       setSelectedServices([])
@@ -189,9 +189,9 @@ export function ManageCategoriesDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Administrar Categorías y Servicios</DialogTitle>
+            <DialogTitle>Manage Categories and Services</DialogTitle>
             <DialogDescription>
-              Gestiona las categorías de servicios y edita o elimina servicios existentes.
+              Manage service categories and edit or delete existing services.
             </DialogDescription>
           </DialogHeader>
 

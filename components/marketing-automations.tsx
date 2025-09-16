@@ -8,51 +8,51 @@ import { Plus, Edit, Copy, Trash, Clock, UserPlus, ShoppingCart, Bell, Tag } fro
 import { AutomationEditor } from "@/components/automation-editor"
 import { useState } from "react"
 
-// Datos de ejemplo para las automatizaciones
+// Example data for automations
 const automationData = [
   {
     id: 1,
-    name: "Bienvenida a Nuevos Usuarios",
-    description: "Envía un email de bienvenida cuando un usuario se registra",
-    trigger: "Registro de usuarios",
+    name: "New User Welcome",
+    description: "Sends a welcome email when a user registers",
+    trigger: "User Registration",
     triggerIcon: UserPlus,
-    schedule: "Inmediato",
-    template: "Bienvenida",
+    schedule: "Immediate",
+    template: "Welcome",
     status: "active",
-    lastRun: "12 Abr, 2025",
+    lastRun: "Apr 12, 2025",
   },
   {
     id: 2,
-    name: "Confirmación de Compra",
-    description: "Envía un email de confirmación después de una compra",
-    trigger: "Compra",
+    name: "Purchase Confirmation",
+    description: "Sends a confirmation email after a purchase",
+    trigger: "Purchase",
     triggerIcon: ShoppingCart,
-    schedule: "Inmediato",
-    template: "Confirmación de Compra",
+    schedule: "Immediate",
+    template: "Purchase Confirmation",
     status: "active",
-    lastRun: "10 Abr, 2025",
+    lastRun: "Apr 10, 2025",
   },
   {
     id: 3,
-    name: "Recordatorio de Cita",
-    description: "Envía un recordatorio 24h antes de una cita programada",
-    trigger: "Recordatorio",
+    name: "Appointment Reminder",
+    description: "Sends a reminder 24h before a scheduled appointment",
+    trigger: "Reminder",
     triggerIcon: Bell,
-    schedule: "24h antes",
-    template: "Recordatorio de Cita",
+    schedule: "24h before",
+    template: "Appointment Reminder",
     status: "active",
-    lastRun: "5 Abr, 2025",
+    lastRun: "Apr 5, 2025",
   },
   {
     id: 4,
-    name: "Promoción Mensual",
-    description: "Envía una promoción mensual a todos los usuarios",
-    trigger: "Promociones y marketing",
+    name: "Monthly Promotion",
+    description: "Sends a monthly promotion to all users",
+    trigger: "Promotions and Marketing",
     triggerIcon: Tag,
-    schedule: "Recurrente (Mensual)",
-    template: "Promoción Mensual",
+    schedule: "Recurring (Monthly)",
+    template: "Monthly Promotion",
     status: "inactive",
-    lastRun: "1 Abr, 2025",
+    lastRun: "Apr 1, 2025",
   },
 ]
 
@@ -77,10 +77,10 @@ export function MarketingAutomations() {
       ) : (
         <>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Automatizaciones de Email</h2>
+            <h2 className="text-2xl font-semibold">Email Automations</h2>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Nueva Automatización
+              New Automation
             </Button>
           </div>
 

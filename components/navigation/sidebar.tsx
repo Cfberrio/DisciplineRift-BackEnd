@@ -15,11 +15,11 @@ interface NavItemProps {
 }
 
 const navItems: NavItemProps[] = [
-  { href: "/", icon: <Home className="w-5 h-5" />, label: "Inicio" },
-  { href: "/agenda", icon: <CalendarDays className="w-5 h-5" />, label: "Agenda" },
-  { href: "/calendario", icon: <Layers className="w-5 h-5" />, label: "Calendario" },
-  { href: "/servicios", icon: <Layers className="w-5 h-5" />, label: "Servicios" },
-  { href: "/escuelas", icon: <School className="w-5 h-5" />, label: "Escuelas" },
+  { href: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
+  { href: "/agenda", icon: <CalendarDays className="w-5 h-5" />, label: "Schedule" },
+  { href: "/calendario", icon: <Layers className="w-5 h-5" />, label: "Calendar" },
+  { href: "/servicios", icon: <Layers className="w-5 h-5" />, label: "Services" },
+  { href: "/escuelas", icon: <School className="w-5 h-5" />, label: "Schools" },
   { href: "/staff", icon: <Users className="w-5 h-5" />, label: "Staff" },
   { href: "/marketing", icon: <Mail className="w-5 h-5" />, label: "Marketing" },
 ]
@@ -49,7 +49,7 @@ export function Sidebar() {
       <div className="p-4 border-t">
         <LogoutButton className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100">
           <LogOut className="w-5 h-5" />
-          <span>Cerrar sesión</span>
+          <span>Sign Out</span>
         </LogoutButton>
       </div>
     </aside>

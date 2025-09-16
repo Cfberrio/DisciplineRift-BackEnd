@@ -24,22 +24,22 @@ interface BulkStatusDialogProps {
 
 const statusConfig = {
   active: {
-    label: "Activo",
+    label: "Active",
     icon: CheckCircle,
     color: "bg-green-500",
-    description: "Los servicios estarán disponibles y visibles para los usuarios.",
+    description: "Services will be available and visible to users.",
   },
   inactive: {
-    label: "Inactivo",
+    label: "Inactive",
     icon: Clock,
     color: "bg-yellow-500",
-    description: "Los servicios estarán temporalmente deshabilitados pero no eliminados.",
+    description: "Services will be temporarily disabled but not removed.",
   },
   ended: {
-    label: "Finalizado",
+    label: "Ended",
     icon: XCircle,
     color: "bg-gray-500",
-    description: "Los servicios se marcarán como completados y no estarán disponibles.",
+    description: "Services will be marked as completed and will not be available.",
   },
 }
 
@@ -86,11 +86,11 @@ export function BulkStatusDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Icon className={`h-5 w-5 text-white rounded-full p-1 ${config.color}`} />
-            Cambiar Estado a "{config.label}"
+            Change Status to "{config.label}"
           </AlertDialogTitle>
           <AlertDialogDescription className="text-left">
-            Estás a punto de cambiar el estado de <strong>{selectedServices.length}</strong> servicio
-            {selectedServices.length > 1 ? "s" : ""} a "{config.label}".
+            You are about to change the status of <strong>{selectedServices.length}</strong> service
+            {selectedServices.length > 1 ? "s" : ""} to "{config.label}".
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -103,17 +103,17 @@ export function BulkStatusDialog({
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                <span className="font-medium text-yellow-800">Advertencias Detectadas</span>
+                <span className="font-medium text-yellow-800">Warnings Detected</span>
               </div>
               <p className="text-sm text-yellow-700">
-                Algunos servicios activos serán marcados como finalizados. Esto puede afectar a participantes
-                registrados o fechas futuras programadas.
+                Some active services will be marked as ended. This may affect registered participants
+                or scheduled future dates.
               </p>
             </div>
           )}
 
           <div>
-            <h4 className="font-medium mb-2">Nuevo Estado:</h4>
+            <h4 className="font-medium mb-2">New Status:</h4>
             <select
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value as "active" | "inactive" | "ended")}

@@ -37,16 +37,16 @@ export function TemplateEditor({ template, onClose, onSave }: TemplateEditorProp
   const [templateName, setTemplateName] = useState(template.name)
   const [templateDescription, setTemplateDescription] = useState(template.description)
   const [templateCategory, setTemplateCategory] = useState(template.category)
-  const [templateContent, setTemplateContent] = useState(template.content || "<p>Contenido de la plantilla...</p>")
+  const [templateContent, setTemplateContent] = useState(template.content || "<p>Template content...</p>")
   const [attachments, setAttachments] = useState<EmailAttachment[]>(template.attachments || [])
 
   // Define variables for template insertion
-  const nombre_cliente = "{{nombre_cliente}}"
-  const fecha_compra = "{{fecha_compra}}"
-  const producto = "{{producto}}"
-  const precio = "{{precio}}"
+  const client_name = "{{client_name}}"
+  const purchase_date = "{{purchase_date}}"
+  const product = "{{product}}"
+  const price = "{{price}}"
 
-  // Función para manejar la adición de archivos adjuntos
+  // Function to handle file attachments
   const handleFileAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files).map((file) => ({
@@ -59,7 +59,7 @@ export function TemplateEditor({ template, onClose, onSave }: TemplateEditorProp
     }
   }
 
-  // Función para eliminar un archivo adjunto
+  // Function to remove an attachment
   const removeAttachment = (index: number) => {
     const newAttachments = [...attachments]
     newAttachments.splice(index, 1)
@@ -73,7 +73,7 @@ export function TemplateEditor({ template, onClose, onSave }: TemplateEditorProp
       category: templateCategory,
       content: templateContent,
       attachments,
-      lastModified: new Date().toLocaleDateString("es-ES", {
+      lastModified: new Date().toLocaleDateString("en-US", {
         day: "2-digit",
         month: "short",
         year: "numeric",

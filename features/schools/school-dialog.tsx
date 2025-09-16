@@ -96,30 +96,30 @@ export function SchoolDialog({ school, open, onOpenChange, onClose }: SchoolDial
     <Dialog open={open} onOpenChange={onOpenChange ?? (() => {})}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Escuela" : "Nueva Escuela"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit School" : "New School"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Modifica los datos de la escuela." : "Completa los datos para crear una nueva escuela."}
+            {isEditing ? "Modify the school data." : "Complete the data to create a new school."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Nombre *</Label>
+              <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Nombre de la escuela"
+                placeholder="School name"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="location">Ubicación *</Label>
+              <Label htmlFor="location">Location *</Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Ciudad, Estado"
+                placeholder="City, State"
                 required
               />
             </div>
@@ -134,10 +134,10 @@ export function SchoolDialog({ school, open, onOpenChange, onClose }: SchoolDial
               }}
               disabled={loading}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
+              {loading ? "Saving..." : isEditing ? "Update" : "Create"}
             </Button>
           </DialogFooter>
         </form>

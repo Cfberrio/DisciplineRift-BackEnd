@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef } from "react"
+import { useCallback, useRef, useEffect } from "react"
 import { useActivityDetection } from "./use-activity-detection"
 
 interface RefreshFunction {
@@ -20,6 +20,8 @@ export function useContextRefresh({
 }: UseContextRefreshOptions) {
   const isRefreshingRef = useRef<boolean>(false)
   const lastRefreshRef = useRef<number>(Date.now())
+  const refreshCountRef = useRef<number>(0)
+  const resetCountTimeoutRef = useRef<NodeJS.Timeout>()
 
   const refreshAllContexts = useCallback(async () => {
     if (isRefreshingRef.current) {
@@ -33,11 +35,27 @@ export function useContextRefresh({
       return
     }
 
+    // Circuit breaker: prevent too many refreshes in a short period
+    refreshCountRef.current += 1
+    if (refreshCountRef.current > 3) {
+      console.warn('Too many context refreshes detected, circuit breaker activated. Skipping...')
+      return
+    }
+
+    // Reset counter after 30 seconds
+    if (resetCountTimeoutRef.current) {
+      clearTimeout(resetCountTimeoutRef.current)
+    }
+    resetCountTimeoutRef.current = setTimeout(() => {
+      refreshCountRef.current = 0
+      console.log('Context refresh circuit breaker reset')
+    }, 30000)
+
     isRefreshingRef.current = true
     lastRefreshRef.current = Date.now()
 
     try {
-      console.log('Refreshing all contexts due to activity after inactivity...')
+      console.log(`Refreshing all contexts (attempt ${refreshCountRef.current}/3) due to activity after inactivity...`)
       
       // Execute all refresh functions in parallel with individual error handling
       await Promise.allSettled(
@@ -69,6 +87,15 @@ export function useContextRefresh({
     onInactive: handleInactivity,
     inactivityThreshold,
   })
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (resetCountTimeoutRef.current) {
+        clearTimeout(resetCountTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return {
     refreshAllContexts,

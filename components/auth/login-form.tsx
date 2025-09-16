@@ -44,7 +44,7 @@ export function LoginForm() {
 
         if (adminError || !adminData) {
           await supabase.auth.signOut()
-          setError("No tienes permisos de administrador")
+          setError("You don't have administrator permissions")
           return
         }
 
@@ -52,7 +52,7 @@ export function LoginForm() {
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError("Error inesperado durante el inicio de sesión")
+      setError("Unexpected error during login")
     } finally {
       setIsLoading(false)
     }
@@ -62,8 +62,8 @@ export function LoginForm() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Iniciar Sesión</CardTitle>
-          <CardDescription>Ingresa tus credenciales para acceder al dashboard</CardDescription>
+          <CardTitle>Sign In</CardTitle>
+          <CardDescription>Enter your credentials to access the dashboard</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,7 +79,7 @@ export function LoginForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -95,7 +95,7 @@ export function LoginForm() {
               </Alert>
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </CardContent>

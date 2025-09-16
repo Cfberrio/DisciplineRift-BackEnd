@@ -171,29 +171,29 @@ export function AutomationEditor({ automation, onClose }: AutomationEditorProps)
 
         <Card>
           <CardHeader>
-            <CardTitle>Selección de Plantilla</CardTitle>
+            <CardTitle>Template Selection</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Plantilla de Email</Label>
+                <Label>Email Template</Label>
                 <Select defaultValue={automation.template}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Bienvenida">Bienvenida</SelectItem>
-                    <SelectItem value="Confirmación de Compra">Confirmación de Compra</SelectItem>
-                    <SelectItem value="Recordatorio de Cita">Recordatorio de Cita</SelectItem>
-                    <SelectItem value="Promoción Mensual">Promoción Mensual</SelectItem>
+                    <SelectItem value="Welcome">Welcome</SelectItem>
+                    <SelectItem value="Purchase Confirmation">Purchase Confirmation</SelectItem>
+                    <SelectItem value="Appointment Reminder">Appointment Reminder</SelectItem>
+                    <SelectItem value="Monthly Promotion">Monthly Promotion</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="border rounded-md p-4 bg-muted/20">
-                <div className="text-center text-muted-foreground">Vista previa de la plantilla seleccionada</div>
+                <div className="text-center text-muted-foreground">Preview of selected template</div>
                 <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
                   <FileIcon className="h-4 w-4" />
-                  <span>Los archivos adjuntos se incluirán al enviar este email</span>
+                  <span>Attachments will be included when sending this email</span>
                 </div>
               </div>
             </div>
@@ -202,11 +202,11 @@ export function AutomationEditor({ automation, onClose }: AutomationEditorProps)
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            Cancel
           </Button>
           <Button>
             <Save className="h-4 w-4 mr-2" />
-            Guardar Cambios
+            Save Changes
           </Button>
         </div>
       </div>

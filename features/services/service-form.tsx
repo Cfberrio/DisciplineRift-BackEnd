@@ -152,7 +152,7 @@ export function ServiceForm({
         console.error("Error in handleSaveSection:", error);
         toast({
           title: "Error",
-          description: "Error al guardar la sección",
+          description: "Error saving section",
           variant: "destructive",
         });
       }
@@ -208,7 +208,7 @@ export function ServiceForm({
     if (!formData.schoolId) {
       toast({
         title: "Error",
-        description: "Debe seleccionar una escuela",
+        description: "You must select a school",
         variant: "destructive",
       });
       return;
@@ -324,19 +324,19 @@ export function ServiceForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Estado</Label>
+              <Label>Status</Label>
               <Select
                 value={formData.status}
                 onValueChange={(value) => handleChange("status", value)}
                 disabled={isLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado" />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Activo</SelectItem>
-                  <SelectItem value="inactive">Inactivo</SelectItem>
-                  <SelectItem value="ended">Finalizado</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="ended">Ended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -346,7 +346,7 @@ export function ServiceForm({
 
           {/* School Selection Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Escuela</h3>
+            <h3 className="text-lg font-medium">School</h3>
             <div className="space-y-2">
               <Label htmlFor="school">Seleccionar Escuela *</Label>
               <Select
@@ -360,8 +360,8 @@ export function ServiceForm({
                   <SelectValue
                     placeholder={
                       schoolsLoading
-                        ? "Cargando escuelas..."
-                        : "Seleccionar una escuela"
+                        ? "Loading schools..."
+                        : "Select a school"
                     }
                   />
                 </SelectTrigger>
@@ -401,10 +401,9 @@ export function ServiceForm({
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CalendarDays className="h-4 w-4" />
                     <span>
-                      {sections.length} sección
-                      {sections.length !== 1 ? "es" : ""} •{" "}
-                      {getTotalScheduledDates()} fecha
-                      {getTotalScheduledDates() !== 1 ? "s" : ""} programada
+                      {sections.length} section
+                      {sections.length !== 1 ? "s" : ""} •{" "}
+                      {getTotalScheduledDates()} scheduled date
                       {getTotalScheduledDates() !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -420,7 +419,7 @@ export function ServiceForm({
                   className="gap-1"
                 >
                   <Plus className="h-4 w-4" />
-                  Añadir Sección
+                  Add Section
                 </Button>
               </div>
             </div>
@@ -430,10 +429,9 @@ export function ServiceForm({
                 <div className="flex flex-col items-center justify-center gap-2 p-8 border border-dashed rounded-lg text-center">
                   <Calendar className="h-10 w-10 text-muted-foreground" />
                   <div className="space-y-1">
-                    <h4 className="text-sm font-medium">No hay secciones</h4>
+                    <h4 className="text-sm font-medium">No sections</h4>
                     <p className="text-sm text-muted-foreground">
-                      Añade secciones a este servicio para que los clientes
-                      puedan inscribirse.
+                      Add sections to this service so customers can register.
                     </p>
                   </div>
                   <Button
