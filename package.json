@@ -10,6 +10,8 @@
     "perf:report": "node -e \"require('./lib/metrics.ts').printPerformanceReport()\""
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.19",
+    "@fullcalendar/daygrid": "^6.1.19",
     "@fullcalendar/interaction": "^6.1.19",
     "@fullcalendar/luxon": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
@@ -69,7 +71,6 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^1.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
