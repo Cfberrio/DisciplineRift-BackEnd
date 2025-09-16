@@ -53,6 +53,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
   );
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [studentLoadError, setStudentLoadError] = useState<string | null>(null);
 
   const calculateAge = (dob: string): number => {
     if (!dob) return 0;
@@ -105,7 +106,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
   const generateRosterPDF = async () => {
     if (enrolledStudents.length === 0) {
-      alert("No hay estudiantes matriculados para generar el roster");
+      alert("No enrolled students to generate roster");
       return;
     }
 
@@ -117,12 +118,12 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       // Add logo/header (you can customize this)
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
-      doc.text("D1 SPORTS & ATHLETICS", 20, 25);
+      doc.text("DISCIPLINE RIFT", 20, 25);
 
       // Service/Season title
       doc.setFontSize(16);
-      doc.text(`${service.name || "Roster del Equipo"}`, 20, 35);
-      doc.text(`${service.school || "Escuela"} Roster`, 20, 45);
+      doc.text(`${service.name || "Team Roster"}`, 20, 35);
+      doc.text(`${service.school || "School"} Roster`, 20, 45);
 
       // Prepare table data
       const tableData = enrolledStudents.map((student, index) => [
@@ -188,12 +189,12 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.text(
-        `Total de Participantes: ${enrolledStudents.length}`,
+        `Total Participants: ${enrolledStudents.length}`,
         20,
         finalY + 15
       );
       doc.text(
-        `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
+        `Generated on: ${new Date().toLocaleDateString("en-US")}`,
         20,
         finalY + 25
       );
@@ -201,7 +202,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       if (service.sessions && service.sessions.length > 0) {
         const session = service.sessions[0];
         doc.text(
-          `Horario: ${session.daysofweek} ${session.starttime} - ${session.endtime}`,
+          `Schedule: ${session.daysofweek} ${session.starttime} - ${session.endtime}`,
           20,
           finalY + 35
         );
@@ -209,14 +210,14 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
       // Generate filename
       const fileName = `roster_${
-        service.name?.replace(/\s+/g, "_") || "equipo"
+        service.name?.replace(/\s+/g, "_") || "team"
       }_${new Date().toISOString().split("T")[0]}.pdf`;
 
       // Save the PDF
       doc.save(fileName);
     } catch (error) {
-      console.error("Error generando PDF:", error);
-      alert("Error al generar el PDF. Por favor intenta de nuevo.");
+      console.error("Error generating PDF:", error);
+      alert("Error generating PDF. Please try again.");
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -230,86 +231,171 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       return;
     }
 
+    const currentTeamId = service.teamid; // Store current teamid to check if it changed during fetch
     setIsLoadingStudents(true);
+    setStudentLoadError(null);
     try {
       console.log(
         "ServiceDetail - Fetching students for teamid:",
         service.teamid
       );
 
-      // Query enrollments for this team
-      const { data: enrollments, error: enrollmentError } = await supabase
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timeout after 30 seconds")), 30000);
+      });
+
+      // Simplified query first - get enrollments only
+      const enrollmentPromise = supabase
         .from("enrollment")
-        .select(
-          `
-          enrollmentid,
-          studentid,
-          isactive,
-          student!inner (
-            studentid,
-            firstname,
-            lastname,
-            dob,
-            grade,
-            ecname,
-            ecphone,
-            ecrelationship,
-            parentid,
-            parent (
-              parentid,
-              firstname,
-              lastname,
-              email,
-              phone
-            )
-          )
-        `
-        )
+        .select("enrollmentid, studentid, teamid, isactive")
         .eq("teamid", service.teamid)
         .eq("isactive", true);
 
+      const { data: enrollments, error: enrollmentError } = await Promise.race([
+        enrollmentPromise,
+        timeoutPromise,
+      ]) as any;
+
       if (enrollmentError) {
         console.error(
-          "ServiceDetail - Error fetching students:",
+          "ServiceDetail - Error fetching enrollments:",
           enrollmentError
         );
+        setEnrolledStudents([]);
         return;
       }
 
-      console.log("ServiceDetail - Raw enrollment data:", enrollments);
+      console.log("ServiceDetail - Found enrollments:", enrollments?.length || 0);
 
-      if (enrollments && enrollments.length > 0) {
-        const studentsData = enrollments.map((enrollment: any) => ({
-          studentid: enrollment.student.studentid,
-          firstname: enrollment.student.firstname,
-          lastname: enrollment.student.lastname,
-          dob: enrollment.student.dob,
-          grade: enrollment.student.grade,
-          ecname: enrollment.student.ecname,
-          ecphone: enrollment.student.ecphone,
-          ecrelationship: enrollment.student.ecrelationship,
-          parent: enrollment.student.parent,
-        }));
-
-        console.log("ServiceDetail - Processed students data:", studentsData);
-        setEnrolledStudents(studentsData);
-      } else {
+      if (!enrollments || enrollments.length === 0) {
         console.log("ServiceDetail - No enrollments found");
         setEnrolledStudents([]);
+        return;
       }
+
+      // Get student IDs for separate query
+      const studentIds = enrollments.map((e: any) => e.studentid);
+      
+      // Fetch students data separately for better performance
+      const studentPromise = supabase
+        .from("student")
+        .select(`
+          studentid,
+          firstname,
+          lastname,
+          dob,
+          grade,
+          ecname,
+          ecphone,
+          ecrelationship,
+          parentid
+        `)
+        .in("studentid", studentIds);
+
+      const { data: students, error: studentError } = await Promise.race([
+        studentPromise,
+        timeoutPromise,
+      ]) as any;
+
+      if (studentError) {
+        console.error("ServiceDetail - Error fetching students:", studentError);
+        setEnrolledStudents([]);
+        return;
+      }
+
+      console.log("ServiceDetail - Found students:", students?.length || 0);
+
+      // Get parent IDs for those students that have them
+      const parentIds = students
+        ?.filter((s: any) => s.parentid)
+        .map((s: any) => s.parentid) || [];
+
+      let parents: any[] = [];
+      if (parentIds.length > 0) {
+        const parentPromise = supabase
+          .from("parent")
+          .select("parentid, firstname, lastname, email, phone")
+          .in("parentid", parentIds);
+
+        const { data: parentData, error: parentError } = await Promise.race([
+          parentPromise,
+          timeoutPromise,
+        ]) as any;
+
+        if (!parentError && parentData) {
+          parents = parentData;
+        }
+      }
+
+      console.log("ServiceDetail - Found parents:", parents?.length || 0);
+
+      // Combine data
+      const studentsData = students?.map((student: any) => {
+        const parent = parents.find((p: any) => p.parentid === student.parentid);
+        return {
+          studentid: student.studentid,
+          firstname: student.firstname,
+          lastname: student.lastname,
+          dob: student.dob,
+          grade: student.grade,
+          ecname: student.ecname,
+          ecphone: student.ecphone,
+          ecrelationship: student.ecrelationship,
+          parent: parent || null,
+        };
+      }) || [];
+
+      console.log("ServiceDetail - Final processed students data:", studentsData.length);
+      
+      // Only update state if we're still looking at the same team
+      if (currentTeamId === service?.teamid) {
+        setEnrolledStudents(studentsData);
+      } else {
+        console.log("ServiceDetail - Team changed during fetch, ignoring results");
+      }
+
     } catch (error) {
       console.error("ServiceDetail - Error fetching students:", error);
-      setEnrolledStudents([]);
+      let errorMessage = "Error desconocido al cargar estudiantes";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("timeout")) {
+          errorMessage = "La consulta tardó demasiado tiempo. Revisa tu conexión e intenta de nuevo.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Only update error state if we're still looking at the same team
+      if (currentTeamId === service?.teamid) {
+        setStudentLoadError(errorMessage);
+        setEnrolledStudents([]);
+      }
     } finally {
-      setIsLoadingStudents(false);
+      // Only update loading state if we're still looking at the same team
+      if (currentTeamId === service?.teamid) {
+        setIsLoadingStudents(false);
+      }
     }
   };
 
   useEffect(() => {
+    // Clear previous state when service changes
+    setEnrolledStudents([]);
+    setStudentLoadError(null);
+    setIsLoadingStudents(false);
+    
     if (service?.teamid) {
-      fetchEnrolledStudents();
+      console.log("ServiceDetail - Service changed, fetching new students for:", service.teamid, "- Service name:", service.name);
+      // Small delay to ensure state is cleared before starting new fetch
+      setTimeout(() => {
+        fetchEnrolledStudents();
+      }, 100);
+    } else {
+      console.log("ServiceDetail - No teamid, clearing students");
     }
-  }, [service?.teamid]);
+  }, [service?.teamid, service?.name]); // Also depend on service name to ensure full refresh
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-US", {
@@ -531,12 +617,12 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
                 {isGeneratingPdf ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Generando...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    Descargar Roster PDF
+                    Download Roster PDF
                   </>
                 )}
               </Button>
@@ -545,16 +631,41 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
         </CardHeader>
         <CardContent>
           {isLoadingStudents ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2">Cargando estudiantes...</span>
+              <span className="ml-2 mt-2">Cargando estudiantes...</span>
+              <p className="text-xs text-gray-500 mt-2">
+                Esto puede tomar unos segundos...
+              </p>
+            </div>
+          ) : studentLoadError ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-red-400 mx-auto mb-4" />
+              <p className="text-red-600 mb-4">
+                {studentLoadError}
+              </p>
+              <Button 
+                onClick={fetchEnrolledStudents}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                🔄 Intentar de nuevo
+              </Button>
             </div>
           ) : enrolledStudents.length === 0 ? (
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-4">
                 No hay estudiantes matriculados en este servicio
               </p>
+              <Button 
+                onClick={fetchEnrolledStudents}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                🔄 Recargar
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -564,7 +675,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium text-blue-900">
-                      Vista Previa del Roster
+                      Roster Preview
                     </span>
                   </div>
                 </div>
