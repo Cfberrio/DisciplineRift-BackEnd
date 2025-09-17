@@ -5,6 +5,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
 import type { User, Session } from "@supabase/supabase-js"
+import { RefreshDetector } from "./refresh-detector"
 
 interface AuthContextType {
   user: User | null
@@ -123,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
       }}
     >
+      <RefreshDetector />
       {children}
     </AuthContext.Provider>
   )
