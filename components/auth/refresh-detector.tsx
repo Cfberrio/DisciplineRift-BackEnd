@@ -9,86 +9,86 @@ export function RefreshDetector() {
   const hasDetectedRefresh = useRef(false)
 
   useEffect(() => {
-    // Detect if this is a page refresh
-    const isPageRefresh = () => {
-      // Check if the page was loaded via refresh
-      if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
-        return true
-      }
-      
-      // Alternative method for newer browsers
-      if (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) {
-        const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming
-        return navEntry.type === "reload"
-      }
-      
-      return false
-    }
-
     const handleRefreshDetection = async () => {
       if (hasDetectedRefresh.current) return
       
-      const isRefresh = isPageRefresh()
+      // More aggressive refresh detection
+      const isRefresh = () => {
+        // Check multiple indicators of refresh
+        if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+          return true
+        }
+        
+        if (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) {
+          const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming
+          return navEntry.type === "reload"
+        }
+        
+        // Check if we have a session but the page was just loaded
+        const hasSession = document.cookie.includes('sb-') || localStorage.getItem('supabase')
+        const justLoaded = performance.now() < 1000 // Page loaded less than 1 second ago
+        
+        return hasSession && justLoaded
+      }
       
-      if (isRefresh) {
+      const isRefreshDetected = isRefresh()
+      
+      if (isRefreshDetected) {
         console.log("🔄 Page refresh detected - clearing session and redirecting to login")
         hasDetectedRefresh.current = true
         
         try {
-          // Clear Supabase session
+          // Immediately redirect to prevent any other execution
+          window.location.href = '/login'
+          
+          // Clear Supabase session in background
           await supabase.auth.signOut()
           
-          // Clear all cookies
-          document.cookie.split(";").forEach((c) => {
-            const eqPos = c.indexOf("=")
-            const name = eqPos > -1 ? c.substr(0, eqPos) : c
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`
-          })
+          // Clear all cookies aggressively
+          const cookies = document.cookie.split(";")
+          for (let cookie of cookies) {
+            const eqPos = cookie.indexOf("=")
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+            if (name) {
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`
+            }
+          }
           
-          // Clear localStorage and sessionStorage
+          // Clear all storage
           localStorage.clear()
           sessionStorage.clear()
           
-          // Clear any Supabase storage
-          if (typeof window !== 'undefined') {
-            Object.keys(localStorage).forEach(key => {
-              if (key.startsWith('sb-') || key.includes('supabase')) {
-                localStorage.removeItem(key)
-              }
-            })
-          }
-          
           console.log("✅ Session cleared successfully")
-          
-          // Redirect to login with a small delay to ensure cleanup
-          setTimeout(() => {
-            router.push('/login')
-          }, 100)
           
         } catch (error) {
           console.error("❌ Error clearing session:", error)
-          // Still redirect to login even if cleanup fails
-          router.push('/login')
+          // Force redirect even if cleanup fails
+          window.location.href = '/login'
         }
       }
     }
 
-    // Run detection immediately
+    // Run detection immediately and aggressively
     handleRefreshDetection()
 
-    // Also run on window focus (backup detection)
-    const handleFocus = () => {
+    // Also check periodically for the first few seconds
+    const interval = setInterval(() => {
       if (!hasDetectedRefresh.current) {
         handleRefreshDetection()
+      } else {
+        clearInterval(interval)
       }
-    }
+    }, 100)
 
-    window.addEventListener('focus', handleFocus)
+    // Clear interval after 3 seconds
+    setTimeout(() => {
+      clearInterval(interval)
+    }, 3000)
 
     return () => {
-      window.removeEventListener('focus', handleFocus)
+      clearInterval(interval)
     }
   }, [router])
 

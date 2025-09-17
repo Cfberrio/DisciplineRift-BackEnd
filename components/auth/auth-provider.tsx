@@ -5,7 +5,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
 import type { User, Session } from "@supabase/supabase-js"
-import { RefreshDetector } from "./refresh-detector"
+// import { RefreshDetector } from "./refresh-detector"
 
 interface AuthContextType {
   user: User | null
@@ -26,9 +26,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isRefreshDetected, setIsRefreshDetected] = useState(false)
 
   useEffect(() => {
-    // Get initial session
+    // Check if this is a refresh first
+    const isPageRefresh = () => {
+      if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+        return true
+      }
+      
+      if (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) {
+        const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming
+        return navEntry.type === "reload"
+      }
+      
+      return false
+    }
+
+    if (isPageRefresh()) {
+      console.log("🔄 Refresh detected in AuthProvider - skipping auth initialization")
+      setIsRefreshDetected(true)
+      setIsLoading(false)
+      return
+    }
+
+    // Get initial session only if not a refresh
     const getInitialSession = async () => {
       try {
         const {
@@ -72,10 +94,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getInitialSession()
 
-    // Listen for auth changes
+    // Listen for auth changes only if not a refresh
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (isRefreshDetected) {
+        console.log("🔄 Skipping auth state change due to refresh detection")
+        return
+      }
+
       console.log("Auth state changed:", event, session?.user?.email)
 
       setSession(session)
@@ -124,7 +151,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
       }}
     >
-      <RefreshDetector />
       {children}
     </AuthContext.Provider>
   )

@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { ServicesProvider } from "@/contexts/services-context";
 import { SchoolsProvider } from "@/contexts/schools-context";
 import { StaffProvider } from "@/contexts/staff-context";
+import { RefreshDetector } from "@/components/auth/refresh-detector";
 import MetricsProvider from "@/components/metrics-provider";
 import DevWDYR from "@/components/dev-wdyr";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {process.env.NODE_ENV === 'development' ? <DevWDYR /> : null}
+        <RefreshDetector />
         <MetricsProvider>
           <AuthProvider>
             <SchoolsProvider>
