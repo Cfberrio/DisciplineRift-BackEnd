@@ -30,14 +30,14 @@ export function useContextRefresh({
     }
 
     const timeSinceLastRefresh = Date.now() - lastRefreshRef.current
-    if (timeSinceLastRefresh < 5000) { // Minimum 5 seconds between refreshes
+    if (timeSinceLastRefresh < 10000) { // Minimum 10 seconds between refreshes (increased from 5s)
       console.log('Context refresh too recent, skipping...')
       return
     }
 
     // Circuit breaker: prevent too many refreshes in a short period
     refreshCountRef.current += 1
-    if (refreshCountRef.current > 3) {
+    if (refreshCountRef.current > 2) { // Reduced from 3 to 2 maximum refreshes
       console.warn('Too many context refreshes detected, circuit breaker activated. Skipping...')
       return
     }

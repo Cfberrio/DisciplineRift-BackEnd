@@ -17,6 +17,8 @@ export function useActivityDetection({
   const timeoutRef = useRef<NodeJS.Timeout>()
   const isInactiveRef = useRef<boolean>(false)
   const isInitializedRef = useRef<boolean>(false)
+  const lastActivityTriggerRef = useRef<number>(0) // Track when we last triggered onActivity
+  const activityCountRef = useRef<number>(0) // Count activities to avoid spam
 
   const updateActivity = useCallback(() => {
     const now = Date.now()
@@ -25,10 +27,23 @@ export function useActivityDetection({
     lastActivityRef.current = now
     isInactiveRef.current = false
 
-    // Only trigger onActivity if we were actually inactive AND it's not the initial mount
-    if (wasInactive && onActivity && isInitializedRef.current) {
-      console.log('User activity detected after inactivity, refreshing connections...')
-      onActivity()
+    // More restrictive conditions for triggering onActivity
+    const timeSinceLastTrigger = now - lastActivityTriggerRef.current
+    const shouldTriggerActivity = wasInactive && 
+                                 onActivity && 
+                                 isInitializedRef.current &&
+                                 timeSinceLastTrigger > 30000 // Minimum 30 seconds between activity triggers
+
+    if (shouldTriggerActivity) {
+      // Additional spam protection: limit activity triggers
+      activityCountRef.current += 1
+      if (activityCountRef.current <= 2) { // Max 2 activity triggers per session
+        console.log('User activity detected after significant inactivity, refreshing connections...')
+        lastActivityTriggerRef.current = now
+        onActivity()
+      } else {
+        console.log('Activity trigger limit reached, skipping refresh to prevent loops')
+      }
     }
 
     // Clear existing timeout
@@ -82,10 +97,20 @@ export function useActivityDetection({
     const initTimeout = setTimeout(() => {
       isInitializedRef.current = true
       console.log('Activity detection initialized - ready to detect activity after inactivity')
-    }, 2000) // Wait 2 seconds before considering real activity
+    }, 5000) // Wait 5 seconds before considering real activity (increased from 2s)
+
+    // Reset activity counter after prolonged inactivity to allow refreshes again
+    const resetCounterInterval = setInterval(() => {
+      const timeSinceLastActivity = Date.now() - lastActivityRef.current
+      if (timeSinceLastActivity > 300000) { // 5 minutes of inactivity
+        activityCountRef.current = 0
+        console.log('Activity counter reset after prolonged inactivity')
+      }
+    }, 60000) // Check every minute
 
     return () => {
       clearTimeout(initTimeout)
+      clearInterval(resetCounterInterval)
       // Cleanup
       events.forEach(event => {
         document.removeEventListener(event, throttledUpdateActivity)
