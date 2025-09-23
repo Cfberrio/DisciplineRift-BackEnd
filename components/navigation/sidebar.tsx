@@ -21,7 +21,7 @@ const navItems: NavItemProps[] = [
   { href: "/servicios", icon: <Layers className="w-5 h-5" />, label: "Services" },
   { href: "/escuelas", icon: <School className="w-5 h-5" />, label: "Schools" },
   { href: "/staff", icon: <Users className="w-5 h-5" />, label: "Staff" },
-  { href: "/marketing", icon: <Mail className="w-5 h-5" />, label: "Marketing" },
+  { href: "/marketing", icon: <Mail className="w-5 h-5" />, label: "Email Campaigns" },
 ]
 
 export function Sidebar() {

@@ -47,11 +47,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Hacer redirect a la URL del archivo con headers para descarga
+    // Hacer redirect a la URL del archivo para visualización en nueva pestaña
     return NextResponse.redirect(resumeUrl, {
       status: 302,
       headers: {
-        'Content-Disposition': `attachment; filename="resume_${application.firstName}_${application.lastName}.pdf"`,
+        'Content-Disposition': `inline; filename="resume_${application.firstName}_${application.lastName}.pdf"`,
+        'Content-Type': 'application/pdf',
       }
     })
 

@@ -47,7 +47,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
       const response = await fetch(`/api/applications?${params}`)
       
       if (!response.ok) {
-        throw new Error("Error al cargar las aplicaciones")
+        throw new Error("Error loading applications")
       }
 
       const data: DrteamResponse = await response.json()
@@ -56,7 +56,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
       setTotal(data.total)
       setTotalPages(data.totalPages)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido")
+      setError(err instanceof Error ? err.message : "Unknown error")
     } finally {
       setLoading(false)
     }
@@ -67,7 +67,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
       const response = await fetch("/api/applications/sports")
       
       if (!response.ok) {
-        throw new Error("Error al cargar deportes")
+        throw new Error("Error loading sports")
       }
 
       const data = await response.json()
@@ -88,17 +88,11 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
   const handleDownload = (application: DrteamApplication) => {
     if (!application.resume) return
 
-    // Usar endpoint proxy para descarga segura
+    // Usar endpoint proxy para abrir PDF en nueva pestaña
     const downloadUrl = `/api/resume?id=${application.id}`
     
-    // Crear enlace temporal para descarga
-    const link = document.createElement("a")
-    link.href = downloadUrl
-    link.download = `resume_${application.firstName}_${application.lastName}.pdf`
-    link.target = "_blank"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // Abrir en nueva pestaña sin forzar descarga
+    window.open(downloadUrl, '_blank')
   }
 
   const truncateText = (text: string, maxLength: number = 120) => {
@@ -128,7 +122,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
           <div className="text-red-500 mb-4">Error: {error}</div>
           <Button onClick={fetchApplications} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Reintentar
+            Retry
           </Button>
         </CardContent>
       </Card>
@@ -141,7 +135,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
         <CardHeader>
           <CardTitle>Applications (Drteam)</CardTitle>
           <CardDescription>
-            Gestión de todas las aplicaciones del formulario Drteam
+            Management of all applications from Drteam form
           </CardDescription>
         </CardHeader>
         
@@ -151,7 +145,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Buscar por nombre, apellido, email o teléfono..."
+                placeholder="Search by name, last name, email or phone..."
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10"
@@ -160,10 +154,10 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
             
             <Select value={selectedSport || "all"} onValueChange={handleSportFilter}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filtrar por deporte" />
+                <SelectValue placeholder="Filter by sport" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los deportes</SelectItem>
+                <SelectItem value="all">All sports</SelectItem>
                 {sports.map((sport) => (
                   <SelectItem key={sport} value={sport}>
                     {sport}
@@ -179,13 +173,13 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">ID</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Apellido</TableHead>
+                  <TableHead>First Name</TableHead>
+                  <TableHead>Last Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Dirección</TableHead>
-                  <TableHead>Deporte</TableHead>
-                  <TableHead className="w-64">Descripción</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Sport</TableHead>
+                  <TableHead className="w-64">Description</TableHead>
                   <TableHead className="w-32">Resume</TableHead>
                 </TableRow>
               </TableHeader>
@@ -207,10 +201,10 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                     <TableCell colSpan={9} className="text-center py-10">
                       <div className="flex flex-col items-center justify-center text-gray-500">
                         <FileX className="w-8 h-8 mb-2" />
-                        <p>No hay aplicaciones disponibles</p>
+                        <p>No applications available</p>
                         {(search || selectedSport) && (
                           <p className="text-sm mt-1">
-                            Intenta ajustar los filtros de búsqueda
+                            Try adjusting the search filters
                           </p>
                         )}
                       </div>
@@ -241,7 +235,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                             </TooltipContent>
                           </Tooltip>
                         ) : (
-                          <span className="text-gray-400">Sin descripción</span>
+                          <span className="text-gray-400">No description</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -255,11 +249,11 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                                 className="w-full"
                               >
                                 <Download className="w-4 h-4 mr-1" />
-                                Descargar
+                                Download
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Descargar PDF del resume</p>
+                              <p>Download resume PDF</p>
                             </TooltipContent>
                           </Tooltip>
                         ) : (
@@ -272,11 +266,11 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                                 className="w-full"
                               >
                                 <FileX className="w-4 h-4 mr-1" />
-                                Sin archivo
+                                No file
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>No hay resume disponible</p>
+                              <p>No resume available</p>
                             </TooltipContent>
                           </Tooltip>
                         )}
@@ -292,7 +286,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
           {!loading && applications.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
               <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>Mostrar</span>
+                <span>Show</span>
                 <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className="w-20">
                     <SelectValue />
@@ -303,7 +297,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span>de {total} registros</span>
+                <span>of {total} records</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -314,11 +308,11 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   disabled={page === 1}
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  Anterior
+                  Previous
                 </Button>
                 
                 <span className="text-sm text-gray-500">
-                  Página {page} de {totalPages}
+                  Page {page} of {totalPages}
                 </span>
                 
                 <Button
@@ -327,7 +321,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   onClick={() => setPage(page + 1)}
                   disabled={page === totalPages}
                 >
-                  Siguiente
+                  Next
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
