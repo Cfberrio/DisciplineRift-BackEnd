@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    console.log("[SERVER] GET /api/teams/[id]/parents - Starting request for team ID:", params.id)
+    const { id } = await params
+    console.log("[SERVER] GET /api/teams/[id]/parents - Starting request for team ID:", id)
 
     const supabase = await createServerSupabaseClient()
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           )
         )
       `)
-      .eq("teamid", params.id)
+      .eq("teamid", id)
       .eq("isactive", true)
 
     if (error) {

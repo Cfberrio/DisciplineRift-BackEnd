@@ -52,28 +52,29 @@ const sampleTemplates: EmailTemplate[] = [
     subject: "Important information about {TEAM_NAME} - {STUDENT_NAME}",
     content: `
       <h2>Dear {PARENT_NAME},</h2>
-      <p>We hope <strong>{STUDENT_NAME}</strong> (Grade: {STUDENT_GRADE}) is enjoying their participation in <strong>{TEAM_NAME}</strong>.</p>
-      <p>We want to keep you informed about some important aspects of the team:</p>
-      <p><strong>Team Information:</strong></p>
+      <p>We wanted to share some important information about <strong>{STUDENT_NAME}'s</strong> team: <strong>{TEAM_NAME}</strong>.</p>
+      
+      <h3>Team Details:</h3>
       <ul>
-        <li>Team Name: {TEAM_NAME}</li>
-        <li>Description: {TEAM_DESCRIPTION}</li>
-        <li>School: {SCHOOL_NAME}</li>
-        <li>Location: {SCHOOL_LOCATION}</li>
-        <li>Coach: {COACH_NAME}</li>
-        <li>Team Fee: {TEAM_PRICE}</li>
+        <li><strong>Team:</strong> {TEAM_NAME}</li>
+        <li><strong>Coach:</strong> {COACH_NAME}</li>
+        <li><strong>School:</strong> {SCHOOL_NAME}</li>
+        <li><strong>Location:</strong> {SCHOOL_LOCATION}</li>
+        <li><strong>Fee:</strong> {TEAM_PRICE}</li>
       </ul>
-      <p><strong>Contact Information on File:</strong></p>
+      
+      <h3>About the Team:</h3>
+      <p>{TEAM_DESCRIPTION}</p>
+      
+      <h3>Student Information:</h3>
       <ul>
-        <li><strong>Parent Email:</strong> {PARENT_EMAIL}</li>
-        <li><strong>Parent Phone:</strong> {PARENT_PHONE}</li>
-        <li><strong>Emergency Contact:</strong> {EMERGENCY_CONTACT_NAME}</li>
-        <li><strong>Emergency Phone:</strong> {EMERGENCY_CONTACT_PHONE}</li>
-        <li><strong>Relationship:</strong> {EMERGENCY_CONTACT_RELATIONSHIP}</li>
+        <li><strong>Student:</strong> {STUDENT_NAME}</li>
+        <li><strong>Grade:</strong> {STUDENT_GRADE}</li>
       </ul>
-      <p>If any of this information needs to be updated, please let us know.</p>
+      
+      <p>We look forward to a great season ahead!</p>
       <p>If you have any questions, please don't hesitate to contact us.</p>
-      <p>Sincerely,<br>The {SCHOOL_NAME} Administrative Team</p>
+      <p>Best regards,<br>The {SCHOOL_NAME} Team</p>
     `,
     category: "Information"
   }
@@ -104,9 +105,8 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
   const [isExtractingPdf, setIsExtractingPdf] = useState(false)
   const [isHtmlMode, setIsHtmlMode] = useState(false)
   const [htmlContent, setHtmlContent] = useState("")
-  const [showPreview, setShowPreview] = useState(false)
   
-  // Estados para SMS
+  // SMS states
   const [smsMessage, setSmsMessage] = useState("")
   
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -116,34 +116,38 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     ? sampleTemplates.find(t => t.id === selectedTemplate)
     : null
 
-  const handleTemplateChange = (templateId: string) => {
-    // Reset all states
-    setIsCustomTemplate(false)
-    setIsHtmlMode(false)
-    setSelectedTemplate(null)
-    setUploadedPdf(null)
-    setUploadedPngTemplate(null)
-    setCustomSubject("")
-    setCustomContent("")
-    setHtmlContent("")
-    setShowPreview(false)
-
-    if (templateId === "html") {
+  const handleTemplateChange = (value: string) => {
+    if (value === "html") {
       setIsHtmlMode(true)
+      setIsCustomTemplate(false)
+      setSelectedTemplate(null)
+      setUploadedPdf(null)
+      setUploadedPngTemplate(null)
+      setPdfContent("")
       setCustomSubject("")
       setHtmlContent("")
-    } else if (templateId === "custom") {
+    } else if (value === "custom") {
       setIsCustomTemplate(true)
-      if (pngInputRef.current) {
-        pngInputRef.current.click()
-      }
+      setIsHtmlMode(false)
+      setSelectedTemplate(null)
+      setUploadedPdf(null)
+      setUploadedPngTemplate(null)
+      setPdfContent("")
     } else {
-      const id = parseInt(templateId)
-      setSelectedTemplate(id)
-      const template = sampleTemplates.find(t => t.id === id)
-      if (template) {
-        setCustomSubject(template.subject)
-        setCustomContent(template.content)
+      const templateId = parseInt(value)
+      if (!isNaN(templateId)) {
+        setSelectedTemplate(templateId)
+        setIsCustomTemplate(false)
+        setIsHtmlMode(false)
+        setUploadedPdf(null)
+        setUploadedPngTemplate(null)
+        setPdfContent("")
+        
+        const template = sampleTemplates.find(t => t.id === templateId)
+        if (template) {
+          setCustomSubject(template.subject)
+          setCustomContent(template.content)
+        }
       }
     }
   }
@@ -159,34 +163,33 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     setUploadedPdf(file)
     setIsExtractingPdf(true)
     setSendStatus("idle")
-
+    
     try {
       const formData = new FormData()
       formData.append('pdf', file)
-
+      
       const response = await fetch('/api/marketing/extract-pdf', {
         method: 'POST',
         body: formData
       })
-
+      
       if (!response.ok) {
         throw new Error('Failed to extract text from PDF')
       }
-
-      const data = await response.json()
-      setPdfContent(data.text)
-      setCustomContent(data.text)
-      setCustomSubject(`Email content from ${file.name}`)
-      setIsCustomTemplate(true)
-      setSelectedTemplate(null)
       
+      const result = await response.json()
+      const extractedText = result.text || result.content || ""
+      
+      setPdfContent(extractedText)
+      setCustomContent(extractedText)
+      setCustomSubject("Content from uploaded PDF")
       setSendStatus("success")
       setSendMessage("PDF content extracted successfully")
+      
     } catch (error) {
-      console.error('Error extracting PDF:', error)
       setSendStatus("error")
       setSendMessage("Failed to extract text from PDF")
-      setUploadedPdf(null)
+      console.error('Error extracting PDF:', error)
     } finally {
       setIsExtractingPdf(false)
     }
@@ -207,7 +210,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     setSendMessage("Template image uploaded successfully")
   }
 
-  const removePdf = () => {
+  const clearPdfUpload = () => {
     setUploadedPdf(null)
     setPdfContent("")
     if (fileInputRef.current) {
@@ -215,7 +218,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     }
   }
 
-  const removePngTemplate = () => {
+  const clearPngUpload = () => {
     setUploadedPngTemplate(null)
     if (pngInputRef.current) {
       pngInputRef.current.value = ""
@@ -248,8 +251,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
       console.log('[CLIENT] Sending SMS request:', {
         teamId: requestPayload.teamId,
         parentCount: requestPayload.parentIds?.length,
+        parentIds: requestPayload.parentIds,
         hasMessage: !!requestPayload.message,
-        messageLength: requestPayload.message?.length
+        messageLength: requestPayload.message?.length,
+        message: requestPayload.message.substring(0, 100) + '...'
       })
       
       const response = await fetch("/api/marketing/send-sms", {
@@ -261,7 +266,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
       })
 
       if (!response.ok) {
-        // Intentar obtener más detalles del error
         let errorMessage = `Server returned ${response.status}: ${response.statusText}`
         try {
           const errorData = await response.json()
@@ -276,13 +280,27 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
       }
 
       const result = await response.json()
-      console.log('[CLIENT] SMS send successful:', result)
+      console.log('[CLIENT] SMS send successful:', {
+        success: result.success,
+        message: result.message,
+        statistics: result.statistics,
+        totalResults: result.results?.length,
+        successfulSMS: result.results?.filter((r: any) => r.success).length,
+        failedSMS: result.results?.filter((r: any) => !r.success).length,
+        results: result.results
+      })
       
       setSendStatus("success")
-      setSendMessage(`SMS sent successfully to ${selectedParents.length} parents! You can send another campaign to the same team or select a different team.`)
+      const successCount = result.results?.filter((r: any) => r.success).length || 0
+      const failCount = result.results?.filter((r: any) => !r.success).length || 0
+      const totalAttempted = result.results?.length || 0
       
-      // Keep the form state so user can send another campaign or modify settings
-      // Only reset the content and status after some time
+      if (failCount > 0) {
+        setSendMessage(`SMS Campaign completed: ${successCount} sent successfully, ${failCount} failed out of ${totalAttempted} attempts. Check console for details.`)
+      } else {
+        setSendMessage(`SMS sent successfully to ${successCount} parents! You can send another campaign to the same team or select a different team.`)
+      }
+      
       setTimeout(() => {
         setSendStatus("idle")
         setSendMessage("")
@@ -413,7 +431,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <div className="text-xs text-muted-foreground">Send HTML emails with templates</div>
                 </div>
               </Button>
-              
+
               <Button
                 onClick={() => setCampaignType('sms')}
                 variant="outline"
@@ -456,10 +474,9 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     </>
                   )}
                 </div>
-                <Button
+                <Button 
                   onClick={() => {
                     setCampaignType(null)
-                    // Reset all form data
                     setSelectedTeamId(null)
                     setSelectedParents([])
                     setSelectedTemplate(null)
@@ -467,532 +484,561 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     setCustomContent("")
                     setSmsMessage("")
                     setIsCustomTemplate(false)
-                    setIsHtmlMode(false)
+                    setUploadedPdf(null)
+                    setUploadedPngTemplate(null)
                     setHtmlContent("")
+                    setIsHtmlMode(false)
                     setSendStatus("idle")
                     setSendMessage("")
                   }}
                   variant="outline"
                   size="sm"
                 >
+                  <X className="h-4 w-4 mr-2" />
                   Change Type
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-      {/* Hidden file inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf"
-        onChange={handlePdfUpload}
-        className="hidden"
-      />
-      <input
-        ref={pngInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handlePngUpload}
-        className="hidden"
-      />
-
-      {/* Team Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Step 1: Select Team
-          </CardTitle>
-          <CardDescription>
-            Choose the team whose parents will receive the email
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TeamSelector 
-            onTeamSelect={setSelectedTeamId}
-            selectedTeamId={selectedTeamId}
+          {/* Hidden file inputs */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            onChange={handlePdfUpload}
+            className="hidden"
           />
-        </CardContent>
-      </Card>
-
-      {/* Parent Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Step 2: Select Recipients
-          </CardTitle>
-          <CardDescription>
-            Choose the parents who will receive the email
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ParentSelector
-            teamId={selectedTeamId}
-            selectedParents={selectedParents}
-            onParentsChange={setSelectedParents}
+          <input
+            ref={pngInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePngUpload}
+            className="hidden"
           />
-        </CardContent>
-      </Card>
 
-      {/* Template Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Step 3: Choose Template
-          </CardTitle>
-          <CardDescription>
-            Select a predefined template, create an HTML email, or create a custom message with image template
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="template-select">Email Template</Label>
-            <Select 
-              value={
-                uploadedPngTemplate ? "custom" :
-                isHtmlMode ? "html" :
-                selectedTemplate?.toString() || 
-                (isCustomTemplate ? "custom" : "")
-              } 
-              onValueChange={handleTemplateChange}
-            >
-              <SelectTrigger id="template-select">
-                <SelectValue placeholder="Select a template..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="html">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    HTML Email
-                  </div>
-                </SelectItem>
-                {!isHtmlMode && (
-                  <>
-                    <SelectItem value="custom">
-                      <div className="flex items-center gap-2">
-                        <Upload className="h-4 w-4" />
-                        Custom Message with Image Template
-                      </div>
-                    </SelectItem>
-                    <Separator />
-                    {sampleTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id.toString()}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{template.name}</span>
-                          <span className="text-xs text-muted-foreground">{template.category}</span>
+          {/* Step 1: Team Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Step 1: Select Team
+              </CardTitle>
+              <CardDescription>
+                Choose the team whose parents will receive the {campaignType}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TeamSelector 
+                selectedTeamId={selectedTeamId}
+                onTeamSelect={setSelectedTeamId}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Step 2: Parent Selection */}
+          {selectedTeamId && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Step 2: Select Parents
+                </CardTitle>
+                <CardDescription>
+                  Choose which parents will receive the {campaignType}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ParentSelector 
+                  teamId={selectedTeamId}
+                  selectedParents={selectedParents}
+                  onParentsChange={setSelectedParents}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Email Template Selection */}
+          {campaignType === 'email' && selectedParents.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Step 3: Choose Email Template
+                </CardTitle>
+                <CardDescription>
+                  Select an email template or create a custom one
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="template-select">Email Template</Label>
+                  <Select 
+                    value={
+                      uploadedPdf ? "pdf" :
+                      uploadedPngTemplate ? "custom" :
+                      isHtmlMode ? "html" :
+                      selectedTemplate?.toString() ||
+                      (isCustomTemplate ? "custom" : "")
+                    }
+                    onValueChange={handleTemplateChange}
+                  >
+                    <SelectTrigger id="template-select">
+                      <SelectValue placeholder="Select a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="html">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          HTML Editor Mode
                         </div>
                       </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* PDF Upload Status */}
-          {uploadedPdf && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <File className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-blue-900">PDF Uploaded</p>
-                    <p className="text-sm text-blue-700">{uploadedPdf.name}</p>
-                  </div>
+                      {!isHtmlMode && (
+                        <SelectItem value="custom">
+                          <div className="flex items-center gap-2">
+                            <Upload className="h-4 w-4" />
+                            Upload Custom Template
+                          </div>
+                        </SelectItem>
+                      )}
+                      {sampleTemplates.map((template) => (
+                        <SelectItem key={template.id} value={template.id.toString()}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{template.name}</span>
+                            <span className="text-xs text-muted-foreground">{template.category}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={removePdf}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              {isExtractingPdf && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Extracting text from PDF...
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* PNG Template Upload Status */}
-          {uploadedPngTemplate && (
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <File className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="font-medium text-green-900">Template Image Uploaded</p>
-                    <p className="text-sm text-green-700">{uploadedPngTemplate.name}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={removePngTemplate}
-                  className="text-green-600 hover:text-green-800"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="mt-3">
-                <img 
-                  src={URL.createObjectURL(uploadedPngTemplate)} 
-                  alt="Template preview" 
-                  className="max-w-full h-auto rounded border max-h-40 object-contain"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* HTML Editor */}
-          {isHtmlMode && (
-            <div className="space-y-4">
-              <h4 className="font-medium">HTML Email Editor</h4>
-
-              {/* Email Subject Field */}
-              <div className="space-y-2">
-                <Label htmlFor="html-email-subject">Email Subject</Label>
-                <Input
-                  id="html-email-subject"
-                  value={customSubject}
-                  onChange={(e) => setCustomSubject(e.target.value)}
-                  placeholder="Email subject..."
-                />
-              </div>
-              
-              {/* HTML Content Editor */}
-              <div className="space-y-2">
-                <Label htmlFor="html-content">HTML Content</Label>
-                <Textarea
-                  id="html-content"
-                  value={htmlContent}
-                  onChange={(e) => setHtmlContent(e.target.value)}
-                  placeholder="Enter your HTML and CSS here..."
-                  className="min-h-[300px] font-mono text-sm resize-none w-full"
-                />
-              </div>
-
-              {/* HTML Preview */}
-              <div className="space-y-2">
-                <Label>Live Preview</Label>
-                <div className="border-2 rounded-lg bg-gray-50 p-1 w-full overflow-hidden">
-                  <div 
-                    className="bg-white rounded border shadow-sm w-full overflow-hidden"
-                    style={{ 
-                      height: '300px', 
-                      maxWidth: '100%',
-                      position: 'relative'
-                    }}
-                  >
-                    {htmlContent.trim() ? (
-                      <div 
-                        className="email-preview-container"
-                        style={{ 
-                          width: '100%',
-                          height: '100%',
-                          transform: 'scale(0.85)',
-                          transformOrigin: 'top left',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        <div 
-                          style={{ 
-                            width: '117.65%', // Compensar el scale de 0.85
-                            height: '117.65%',
-                            overflow: 'hidden'
-                          }}
-                          dangerouslySetInnerHTML={{ __html: htmlContent }} 
-                        />
+                {/* PDF Upload Status */}
+                {uploadedPdf && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <File className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <p className="font-medium text-blue-900">PDF Uploaded</p>
+                          <p className="text-sm text-blue-700">{uploadedPdf.name}</p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        <div className="text-center">
-                          <Mail className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p>HTML preview will appear here...</p>
-                          <p className="text-xs mt-1">Start typing HTML to see the result</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearPdfUpload}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {isExtractingPdf && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Extracting text from PDF...
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* PNG Template Upload Status */}
+                {uploadedPngTemplate && (
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <File className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-green-900">Template Image Uploaded</p>
+                          <p className="text-sm text-green-700">{uploadedPngTemplate.name}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearPngUpload}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="mt-3">
+                      <img 
+                        src={URL.createObjectURL(uploadedPngTemplate)} 
+                        alt="Template preview" 
+                        className="max-w-full h-auto rounded border max-h-40 object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* HTML Mode Editor */}
+                {isHtmlMode && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium">HTML Email Editor</h4>
+                    
+                    {/* Available Variables */}
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h5 className="font-medium text-blue-900 mb-2">Available Database Variables</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_GRADE}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{COACH_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_LOCATION}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_PRICE}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_DESCRIPTION}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_EMAIL}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_PHONE}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SESSION_DATE}"}</Badge>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-2">
+                        Copy and paste these variables into your content. They will be automatically replaced with actual data when sending.
+                      </p>
+                    </div>
+                    
+                    {/* Subject field for HTML mode */}
+                    <div className="space-y-2">
+                      <Label htmlFor="html-email-subject">Email Subject</Label>
+                      <Input
+                        id="html-email-subject"
+                        value={customSubject}
+                        onChange={(e) => setCustomSubject(e.target.value)}
+                        placeholder="Example: Reminder for {STUDENT_NAME} - {TEAM_NAME} Session"
+                      />
+                    </div>
+
+                    {/* HTML Content Editor */}
+                    <div className="space-y-2">
+                      <Label htmlFor="html-content">HTML Content</Label>
+                      <Textarea
+                        id="html-content"
+                        value={htmlContent}
+                        onChange={(e) => setHtmlContent(e.target.value)}
+                        placeholder="Example: <h2>Hello {PARENT_NAME},</h2><p>This is a reminder for <strong>{STUDENT_NAME}</strong> training with <strong>{TEAM_NAME}</strong>...</p>"
+                        className="min-h-[300px] font-mono text-sm"
+                      />
+                    </div>
+
+                    {/* HTML Preview */}
+                    {htmlContent.trim() && (
+                      <div className="space-y-2">
+                        <Label>Preview</Label>
+                        <div className="border rounded-lg p-4 bg-white" style={{
+                          minHeight: '200px',
+                          maxHeight: '300px', 
+                          maxWidth: '100%',
+                          position: 'relative'
+                        }}>
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            transform: 'scale(0.85)',
+                            transformOrigin: 'top left',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              width: '117.65%', // Compensar el scale de 0.85
+                              height: '117.65%',
+                              overflow: 'hidden'
+                            }}>
+                              <div
+                                dangerouslySetInnerHTML={{ __html: htmlContent }} 
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  ✨ Updates in real-time as you type
-                </p>
-              </div>
+                )}
 
-              <div className="text-xs text-muted-foreground">
-                <strong>Available variables from database:</strong>
-                <div className="mt-1 grid grid-cols-2 gap-1">
-                  <span>{"{PARENT_NAME}"}</span>
-                  <span>{"{STUDENT_NAME}"}</span>
-                  <span>{"{TEAM_NAME}"}</span>
-                  <span>{"{SCHOOL_NAME}"}</span>
-                  <span>{"{SCHOOL_LOCATION}"}</span>
-                  <span>{"{COACH_NAME}"}</span>
-                  <span>{"{PARENT_EMAIL}"}</span>
-                  <span>{"{PARENT_PHONE}"}</span>
-                  <span>{"{STUDENT_GRADE}"}</span>
-                  <span>{"{TEAM_PRICE}"}</span>
-                  <span>{"{TEAM_DESCRIPTION}"}</span>
-                  <span>{"{EMERGENCY_CONTACT_NAME}"}</span>
-                  <span>{"{EMERGENCY_CONTACT_PHONE}"}</span>
-                  <span>{"{EMERGENCY_CONTACT_RELATIONSHIP}"}</span>
-                </div>
-              </div>
-            </div>
+                {/* Custom template upload buttons */}
+                {isCustomTemplate && !uploadedPdf && !uploadedPngTemplate && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Upload Custom Template</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button 
+                        onClick={() => fileInputRef.current?.click()}
+                        variant="outline" 
+                        className="h-32 flex flex-col items-center justify-center space-y-2 border-dashed"
+                      >
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <div className="text-center">
+                          <div className="font-medium">Upload PDF</div>
+                          <div className="text-xs text-muted-foreground">Extract text content from PDF</div>
+                        </div>
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => pngInputRef.current?.click()}
+                        variant="outline" 
+                        className="h-32 flex flex-col items-center justify-center space-y-2 border-dashed"
+                      >
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <div className="text-center">
+                          <div className="font-medium">Upload Image Template</div>
+                          <div className="text-xs text-muted-foreground">PNG, JPG or other image formats</div>
+                        </div>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* Template Preview */}
           {selectedTemplateData && !uploadedPdf && !isHtmlMode && (
-            <div className="p-4 bg-muted rounded-lg">
-              <h4 className="font-medium mb-2">Template Preview:</h4>
-              <p className="text-sm text-muted-foreground mb-2">
-                <strong>Subject:</strong> {selectedTemplateData.subject}
-              </p>
-              <div className="text-sm bg-background p-3 rounded border max-h-32 overflow-y-auto">
-                <div dangerouslySetInnerHTML={{ __html: selectedTemplateData.content }} />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Content Editor */}
-      {(selectedTemplate || isCustomTemplate || uploadedPdf || isHtmlMode) && !isHtmlMode && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Step 4: Customize Message
-            </CardTitle>
-            <CardDescription>
-              Edit the subject and content of the email. Use variables from the database to personalize each email automatically.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email-subject">Email Subject</Label>
-              <Input
-                id="email-subject"
-                value={customSubject}
-                onChange={(e) => setCustomSubject(e.target.value)}
-                placeholder="Email subject..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email-content">Email Content</Label>
-              <Textarea
-                id="email-content"
-                value={customContent}
-                onChange={(e) => setCustomContent(e.target.value)}
-                placeholder="Email content..."
-                className="min-h-[200px]"
-              />
-            </div>
-
-            {/* PNG Template Preview with Text Overlay */}
-            {uploadedPngTemplate && (
-              <div className="space-y-2">
-                <Label>Template Preview with Your Text</Label>
-                <div className="relative border rounded-lg overflow-hidden bg-white max-w-md mx-auto">
-                  <img 
-                    src={URL.createObjectURL(uploadedPngTemplate)} 
-                    alt="Template background" 
-                    className="w-full h-auto"
+            <Card>
+              <CardHeader>
+                <CardTitle>Template Preview</CardTitle>
+                <CardDescription>
+                  Preview of {selectedTemplateData.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-4 bg-gray-50 rounded-lg border space-y-2">
+                  <div className="font-medium">Subject: {selectedTemplateData.subject}</div>
+                  <Separator />
+                  <div 
+                    className="prose prose-sm max-w-none"
+                    style={{ 
+                      maxHeight: '70%', 
+                      overflow: 'hidden',
+                      fontSize: 'clamp(10px, 2vw, 14px)' 
+                    }}
+                    dangerouslySetInnerHTML={{ __html: selectedTemplateData.content }} 
                   />
-                  <div className="absolute inset-0 flex flex-col justify-center items-center p-8">
-                    <div 
-                      className="text-center bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-lg max-w-xs"
-                      style={{ 
-                        maxHeight: '70%', 
-                        overflow: 'hidden',
-                        fontSize: 'clamp(10px, 2vw, 14px)' 
-                      }}
-                    >
-                      <h3 className="font-bold mb-2 text-gray-800">
-                        {customSubject || "Email Subject"}
-                      </h3>
-                      <div className="text-gray-700 text-sm leading-tight">
-                        {customContent || "Your email content will appear here..."}
-                      </div>
-                    </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Email Content Customization */}
+          {(selectedTemplate || isCustomTemplate || uploadedPdf || isHtmlMode) && !isHtmlMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Customize Email Content</CardTitle>
+                <CardDescription>
+                  Modify the subject and content of your email
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Available Variables */}
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h5 className="font-medium text-blue-900 mb-2">Available Database Variables</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_GRADE}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{COACH_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_LOCATION}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_PRICE}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_DESCRIPTION}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_EMAIL}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_PHONE}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SESSION_DATE}"}</Badge>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Copy and paste these variables into your content. They will be automatically replaced with actual data when sending.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email-subject">Email Subject</Label>
+                  <Input
+                    id="email-subject"
+                    value={customSubject}
+                    onChange={(e) => setCustomSubject(e.target.value)}
+                    placeholder="Example: Reminder for {STUDENT_NAME} - {TEAM_NAME} Session"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email-content">Email Content</Label>
+                  <Textarea
+                    id="email-content"
+                    value={customContent}
+                    onChange={(e) => setCustomContent(e.target.value)}
+                    placeholder="Example: Hello {PARENT_NAME}, this is a reminder for {STUDENT_NAME}'s training with {TEAM_NAME} at {SCHOOL_LOCATION}..."
+                    className="min-h-[200px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* SMS Message Input */}
+          {campaignType === 'sms' && selectedParents.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Step 3: Compose SMS Message
+                </CardTitle>
+                <CardDescription>
+                  Write your text message (SMS messages are limited to 160 characters per segment)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Available Variables for SMS */}
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h5 className="font-medium text-green-900 mb-2">Available Database Variables</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{PARENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{STUDENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{STUDENT_GRADE}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{TEAM_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{COACH_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{SCHOOL_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{SCHOOL_LOCATION}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{TEAM_PRICE}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{TEAM_DESCRIPTION}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{PARENT_EMAIL}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{PARENT_PHONE}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{SESSION_DATE}"}</Badge>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    Copy and paste these variables into your SMS message. They will be automatically replaced with actual data when sending.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sms-message">SMS Message</Label>
+                  <Textarea
+                    id="sms-message"
+                    value={smsMessage}
+                    onChange={(e) => setSmsMessage(e.target.value)}
+                    placeholder="Example: Hi {PARENT_NAME}! Reminder: {STUDENT_NAME} has training with {TEAM_NAME} today at {SCHOOL_LOCATION}. Coach: {COACH_NAME}"
+                    className="min-h-[100px]"
+                  />
+                  <div className="text-sm text-muted-foreground">
+                    Characters: {smsMessage.length} / 160 (approx. {Math.ceil(smsMessage.length / 160)} SMS segments)
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Preview of how your text will appear over the template image
-                </p>
-              </div>
-            )}
-
-            <div className="text-xs text-muted-foreground">
-              <strong>Available variables from database:</strong>
-              <div className="mt-1 grid grid-cols-2 gap-1">
-                <span>{"{PARENT_NAME}"}</span>
-                <span>{"{STUDENT_NAME}"}</span>
-                <span>{"{TEAM_NAME}"}</span>
-                <span>{"{SCHOOL_NAME}"}</span>
-                <span>{"{SCHOOL_LOCATION}"}</span>
-                <span>{"{COACH_NAME}"}</span>
-                <span>{"{PARENT_EMAIL}"}</span>
-                <span>{"{PARENT_PHONE}"}</span>
-                <span>{"{STUDENT_GRADE}"}</span>
-                <span>{"{TEAM_PRICE}"}</span>
-                <span>{"{TEAM_DESCRIPTION}"}</span>
-                <span>{"{EMERGENCY_CONTACT_NAME}"}</span>
-                <span>{"{EMERGENCY_CONTACT_PHONE}"}</span>
-                <span>{"{EMERGENCY_CONTACT_RELATIONSHIP}"}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-
-      {/* Review and Send */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5" />
-            Step 5: Review and Send
-          </CardTitle>
-          <CardDescription>
-            Review the details before sending the campaign
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
-                {selectedTeamId ? "1" : "0"}
-              </div>
-              <div className="text-sm text-muted-foreground">Team selected</div>
-            </div>
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
-                {selectedParents.length}
-              </div>
-              <div className="text-sm text-muted-foreground">Recipients</div>
-            </div>
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
-                {(selectedTemplate || isCustomTemplate || uploadedPdf || isHtmlMode) && 
-                 customSubject && 
-                 (isHtmlMode ? htmlContent : customContent) ? "1" : "0"}
-              </div>
-              <div className="text-sm text-muted-foreground">Template ready</div>
-            </div>
-          </div>
-
-          {/* Status Messages */}
-          {sendStatus === "success" && (
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription className="text-green-600">
-                {sendMessage}
-              </AlertDescription>
-            </Alert>
+              </CardContent>
+            </Card>
           )}
 
-          {sendStatus === "error" && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {sendMessage}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Button 
-              onClick={handleSendEmail}
-              disabled={
-                !selectedTeamId || 
-                selectedParents.length === 0 || 
-                !customSubject.trim() || 
-                (isHtmlMode ? !htmlContent.trim() : !customContent.trim()) ||
-                isSending
-              }
-              className="w-full"
-              size="lg"
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Campaign ({selectedParents.length} recipients)
-                </>
-              )}
-            </Button>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                onClick={async () => {
-                  try {
-                    setSendStatus("idle")
-                    const response = await fetch('/api/marketing/test-email-config')
-                    const result = await response.json()
-                    console.log('[CLIENT] Email config test:', result)
-                    if (result.success) {
-                      setSendStatus("success")
-                      setSendMessage("✅ Email configuration is working correctly!")
-                    } else {
-                      setSendStatus("error")
-                      setSendMessage(`❌ Email config error: ${result.error}`)
+          {/* Send Campaign */}
+          {((selectedTemplate || isCustomTemplate || uploadedPdf || isHtmlMode) && 
+            campaignType === 'email' && 
+            (isHtmlMode ? htmlContent : customContent) ? "1" : "0") === "1" || 
+           (campaignType === 'sms' && smsMessage.trim()) ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Send className="h-5 w-5" />
+                  Send Campaign
+                </CardTitle>
+                <CardDescription>
+                  Review and send your {campaignType} campaign to {selectedParents.length} parent{selectedParents.length !== 1 ? 's' : ''}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Send Status */}
+                {sendStatus !== "idle" && (
+                  <Alert className={sendStatus === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+                    {sendStatus === "success" ? 
+                      <CheckCircle className="h-4 w-4 text-green-600" /> : 
+                      <AlertCircle className="h-4 w-4 text-red-600" />
                     }
-                  } catch (error) {
-                    console.error('[CLIENT] Config test failed:', error)
-                    setSendStatus("error")
-                    setSendMessage("❌ Failed to test email configuration")
-                  }
-                }}
-                variant="outline"
-                className="w-full"
-                size="sm"
-              >
-                🔧 Test Config
-              </Button>
-              
-              <Button 
-                onClick={() => {
-                  // Reset the entire form for a new campaign
-                  setSelectedTeamId(null)
-                  setSelectedParents([])
-                  setSelectedTemplate(null)
-                  setCustomSubject("")
-                  setCustomContent("")
-                  setIsCustomTemplate(false)
-                  setIsHtmlMode(false)
-                  setHtmlContent("")
-                  setUploadedPdf(null)
-                  setUploadedPngTemplate(null)
-                  setPdfContent("")
-                  setShowPreview(false)
-                  setSendStatus("idle")
-                  setSendMessage("")
-                }}
-                variant="outline"
-                className="w-full"
-                size="sm"
-              >
-                🔄 New Campaign
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                    <AlertDescription className={sendStatus === "success" ? "text-green-800" : "text-red-800"}>
+                      {sendMessage}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
+                {/* Send Button */}
+                <div className="flex justify-between items-center">
+                  <Button
+                    onClick={campaignType === 'email' ? handleSendEmail : handleSendSMS}
+                    disabled={
+                      isSending || 
+                      (campaignType === 'email' && 
+                       ((isHtmlMode ? !htmlContent.trim() : !customContent.trim()) ||
+                        !customSubject.trim())) ||
+                      (campaignType === 'sms' && !smsMessage.trim()) ||
+                      selectedParents.length === 0
+                    }
+                    className="w-full"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Sending {campaignType}...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send {campaignType.toUpperCase()} to {selectedParents.length} parent{selectedParents.length !== 1 ? 's' : ''}
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Test Configuration Button */}
+                  {campaignType === 'email' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/marketing/test-email-config')
+                          const result = await response.json()
+                          console.log('[CLIENT] Email config test:', result)
+                          setSendStatus("success")
+                          setSendMessage("Email configuration test completed. Check console for details.")
+                        } catch (error) {
+                          console.error('[CLIENT] Config test failed:', error)
+                          setSendStatus("error")
+                          setSendMessage("Email configuration test failed. Check console for details.")
+                        }
+                      }}
+                      className="ml-2 whitespace-nowrap"
+                    >
+                      Test Config
+                    </Button>
+                  )}
+                  
+                  {/* Test SMS Configuration Button */}
+                  {campaignType === 'sms' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/marketing/test-sms-config')
+                          const result = await response.json()
+                          console.log('[CLIENT] SMS config test:', result)
+                          if (result.success) {
+                            setSendStatus("success")
+                            setSendMessage(`SMS configuration verified! Twilio phone: ${result.envCheck?.twilioPhone || 'configured'}`)
+                          } else {
+                            setSendStatus("error")
+                            setSendMessage(`SMS configuration failed: ${result.error || 'Unknown error'}`)
+                          }
+                        } catch (error) {
+                          console.error('[CLIENT] SMS config test failed:', error)
+                          setSendStatus("error")
+                          setSendMessage("SMS configuration test failed. Check console for details.")
+                        }
+                      }}
+                      className="ml-2 whitespace-nowrap"
+                    >
+                      Test SMS Config
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

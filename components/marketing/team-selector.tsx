@@ -13,6 +13,7 @@ interface Team {
   price: number
   participants: number
   isactive: boolean
+  isongoing: boolean
   school?: {
     name: string
     location: string
@@ -40,9 +41,11 @@ export function TeamSelector({ onTeamSelect, selectedTeamId }: TeamSelectorProps
         }
         
         const allTeams = await response.json()
-        // Filtrar solo equipos activos
-        const activeTeams = allTeams.filter((team: Team) => team.isactive === true)
-        setTeams(activeTeams)
+        // Filtrar solo equipos activos y en curso
+        const activeOngoingTeams = allTeams.filter((team: Team) => 
+          team.isactive === true && team.isongoing === true
+        )
+        setTeams(activeOngoingTeams)
         setError(null)
       } catch (err) {
         console.error("Error fetching teams:", err)
@@ -108,7 +111,7 @@ export function TeamSelector({ onTeamSelect, selectedTeamId }: TeamSelectorProps
       </Select>
       {teams.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No active teams available.
+          No active and ongoing teams available.
         </p>
       )}
     </div>

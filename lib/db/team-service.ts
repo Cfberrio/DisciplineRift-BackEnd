@@ -9,6 +9,7 @@ export interface Team {
   price: number
   participants: number
   isactive: boolean
+  isongoing: boolean
   created_at?: string
   updated_at?: string
 }
@@ -20,6 +21,7 @@ export interface CreateTeamData {
   price: number
   participants: number
   isactive: boolean
+  isongoing: boolean
 }
 
 export interface UpdateTeamData {
@@ -29,6 +31,7 @@ export interface UpdateTeamData {
   price?: number
   participants?: number
   isactive?: boolean
+  isongoing?: boolean
 }
 
 class TeamService {
@@ -135,6 +138,7 @@ class TeamService {
         price: Number(teamData.price) || 0,
         participants: Number(teamData.participants) || 20,
         isactive: Boolean(teamData.isactive),
+        isongoing: Boolean(teamData.isongoing),
       }
 
       console.log("[SERVER] Prepared insert data:", JSON.stringify(insertData, null, 2))

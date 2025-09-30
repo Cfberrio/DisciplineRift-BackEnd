@@ -29,6 +29,33 @@ export const verifySMSConfiguration = async () => {
   }
 }
 
+// Función para limpiar y formatear números de teléfono
+const cleanPhoneNumber = (phone: string): string => {
+  // Remover todos los caracteres no numéricos excepto el +
+  let cleaned = phone.replace(/[^\d+]/g, '')
+  
+  console.log('[SMS] Original number:', phone)
+  
+  // Si no empieza con +, asumir que es número de US/Canada y agregar +1
+  if (!cleaned.startsWith('+')) {
+    // Si ya tiene 11 dígitos (1XXXXXXXXXX), agregar + al inicio
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      cleaned = '+' + cleaned
+    }
+    // Si tiene 10 dígitos (XXXXXXXXXX), agregar +1
+    else if (cleaned.length === 10) {
+      cleaned = '+1' + cleaned
+    }
+    // Si tiene otros formatos, intentar agregando +1
+    else {
+      cleaned = '+1' + cleaned.replace(/^1/, '') // remover 1 inicial si existe
+    }
+  }
+  
+  console.log('[SMS] Cleaned number:', cleaned)
+  return cleaned
+}
+
 export const sendSMS = async (options: {
   to: string
   message: string
@@ -53,20 +80,26 @@ export const sendSMS = async (options: {
 
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
 
-    console.log('[SMS] Sending SMS to:', options.to)
+    // Limpiar números de teléfono
+    const cleanedTo = cleanPhoneNumber(options.to)
+    const cleanedFrom = cleanPhoneNumber(process.env.TWILIO_PHONE_NUMBER)
+    
+    console.log('[SMS] Cleaned TO number:', cleanedTo)
+    console.log('[SMS] Cleaned FROM number:', cleanedFrom)
+    console.log('[SMS] Sending SMS to:', cleanedTo)
     console.log('[SMS] Message length:', options.message.length)
     
     const message = await client.messages.create({
       body: options.message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: options.to
+      from: cleanedFrom,
+      to: cleanedTo
     })
     
     console.log('[SMS] SMS sent successfully:', message.sid)
     return {
       success: true,
       messageId: message.sid,
-      phone: options.to
+      phone: cleanedTo
     }
   } catch (error) {
     console.error('[SMS] Failed to send SMS:', error)
@@ -93,4 +126,7 @@ export const replaceSMSVariables = (
   
   return processedContent
 }
+
+
+
 
