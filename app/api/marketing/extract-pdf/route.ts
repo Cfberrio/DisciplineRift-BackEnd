@@ -1,12 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createReadStream } from 'fs'
 import { writeFile, unlink } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-
-// Import PDF parsing library - you'll need to install pdf-parse
-// npm install pdf-parse @types/pdf-parse
-const pdf = require('pdf-parse')
 
 export async function POST(request: NextRequest) {
   let tempFilePath = ''
@@ -49,9 +44,11 @@ export async function POST(request: NextRequest) {
     // Write buffer to temporary file
     await writeFile(tempFilePath, buffer)
 
-    // Extract text from PDF
-    const dataBuffer = createReadStream(tempFilePath)
-    const pdfData = await pdf(dataBuffer)
+    // Dynamically import pdf-parse only at runtime
+    const pdf = (await import('pdf-parse')).default
+    
+    // Extract text from PDF - pass buffer directly instead of stream
+    const pdfData = await pdf(buffer)
 
     // Clean extracted text
     let extractedText = pdfData.text
