@@ -41,9 +41,9 @@ export function TeamSelector({ onTeamSelect, selectedTeamId }: TeamSelectorProps
         }
         
         const allTeams = await response.json()
-        // Filtrar solo equipos activos y en curso
+        // Filtrar solo equipos activos que NO están en curso
         const activeOngoingTeams = allTeams.filter((team: Team) => 
-          team.isactive === true && team.isongoing === true
+          team.isactive === true && team.isongoing === false
         )
         setTeams(activeOngoingTeams)
         setError(null)
@@ -111,7 +111,7 @@ export function TeamSelector({ onTeamSelect, selectedTeamId }: TeamSelectorProps
       </Select>
       {teams.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No active and ongoing teams available.
+          No active teams available for messaging.
         </p>
       )}
     </div>
