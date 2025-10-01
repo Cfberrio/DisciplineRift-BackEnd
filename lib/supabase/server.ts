@@ -9,6 +9,14 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 // Export singleton instance
 export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: {
+      'x-client-info': 'volleyball-app-server',
+    },
+  },
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -18,6 +26,14 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 // Create a function that returns the server supabase client
 export function createServerSupabaseClient() {
   return createClient(supabaseUrl, supabaseServiceKey, {
+    db: {
+      schema: 'public',
+    },
+    global: {
+      headers: {
+        'x-client-info': 'volleyball-app-server',
+      },
+    },
     auth: {
       autoRefreshToken: false,
       persistSession: false,

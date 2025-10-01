@@ -12,18 +12,19 @@ export function ConnectionManager() {
   const { refreshServices } = useServices()
 
   // Set up automatic refresh on activity after inactivity
+  // DESACTIVADO para evitar loops infinitos - los contexts se refrescan manualmente cuando es necesario
   const { refreshAllContexts } = useContextRefresh({
     refreshFunctions: [
       fetchStaff,
       fetchSchools, 
       refreshServices,
     ],
-    refreshOnActivity: true,
-    inactivityThreshold: 25000, // 25 seconds
+    refreshOnActivity: false, // DESACTIVADO para prevenir loops
+    inactivityThreshold: 300000, // 5 minutos - mucho más largo
   })
 
   useEffect(() => {
-    console.log('ConnectionManager: Activity-based refresh system initialized')
+    console.log('ConnectionManager: Manual refresh system initialized (auto-refresh disabled)')
   }, [])
 
   // This component doesn't render anything, it just manages connections

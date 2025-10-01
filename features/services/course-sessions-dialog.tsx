@@ -350,6 +350,9 @@ export function CourseSessionsDialog({
               onChange={(time) =>
                 setFormData((prev) => ({ ...prev, startTime: time }))
               }
+              minHour={13}
+              maxHour={16}
+              interval={15}
             />
           </div>
 

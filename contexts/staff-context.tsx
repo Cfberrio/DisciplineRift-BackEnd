@@ -4,6 +4,7 @@ import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { staffApi, type Staff } from "@/lib/api/staff-api";
 import { useToast } from "@/hooks/use-toast";
+import { withRetry } from "@/lib/api/api-retry";
 
 interface StaffContextType {
   staff: Staff[];
@@ -23,61 +24,45 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchStaff = async (retryCount = 0) => {
-    const maxRetries = 2;
-    const baseTimeout = 30000; // 30 seconds base timeout
-    const timeoutMultiplier = retryCount + 1;
-    
+  const fetchStaff = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("StaffContext: Fetching staff...", retryCount > 0 ? `(retry ${retryCount})` : "");
+      console.log("StaffContext: Fetching staff...");
 
-      // Progressive timeout increase with retries
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout")), baseTimeout * timeoutMultiplier);
-      });
-
-      const dataPromise = staffApi.getAll();
-      const data = (await Promise.race([dataPromise, timeoutPromise])) as any;
+      const data = await withRetry(
+        () => staffApi.getAll(),
+        {
+          maxRetries: 3,
+          baseTimeout: 60000, // 60 segundos
+          retryDelay: 2000,
+          onRetry: (attempt, error) => {
+            console.log(`StaffContext: Reintentando (${attempt}/3)...`, error.message);
+          },
+        }
+      );
 
       console.log("StaffContext: Fetched staff:", data?.length || 0, "records");
 
-      // Ensure we always have an array
       const staffArray = Array.isArray(data) ? data : [];
       setStaff(staffArray);
-      setError(null); // Clear any previous errors on success
+      setError(null);
     } catch (err) {
       console.error("StaffContext: Error fetching staff:", err);
       const errorMessage = err instanceof Error ? err.message : "Error desconocido";
       
-      // Retry logic for timeout and network errors
-      if (retryCount < maxRetries && (errorMessage.includes("timeout") || errorMessage.includes("network") || errorMessage.includes("fetch"))) {
-        console.log(`StaffContext: Retrying fetch staff in ${(retryCount + 1) * 2} seconds...`);
-        setTimeout(() => {
-          fetchStaff(retryCount + 1);
-        }, (retryCount + 1) * 2000); // Progressive delay: 2s, 4s, 6s
-        return; // Don't set error state yet, we're retrying
-      }
-      
       setError(errorMessage);
-      setStaff([]); // Always set empty array on final error
+      setStaff([]);
 
-      // Only show toast for final errors (not during retries)
-      if (retryCount >= maxRetries) {
-        toast({
-          title: "Error",
-          description: errorMessage.includes("timeout") 
-            ? "La conexión tardó demasiado. Revisa tu conexión a internet."
-            : "No se pudieron cargar los miembros del staff",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error al cargar coaches",
+        description: errorMessage.includes("timeout")
+          ? "La conexión tardó demasiado. Por favor, intenta de nuevo."
+          : "No se pudieron cargar los coaches. Haz clic en 'Reintentar'.",
+        variant: "destructive",
+      });
     } finally {
-      // Only set loading false if this is the final attempt or success
-      if (retryCount >= maxRetries || !error) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 

@@ -4,17 +4,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-
-interface Section {
-  id: string
-  name: string
-  startDate: Date
-  startTime: string
-  duration: string
-  repeat: string
-  staffId: string
-  recurringDates?: Date[]
-}
+import type { Section } from "./types"
 
 interface SectionDebugProps {
   sections: Section[]
@@ -31,12 +21,13 @@ export function SectionDebug({ sections, onTestSave }: SectionDebugProps) {
     try {
       const testSection: Section = {
         id: `test-${Date.now()}`,
-        name: "Test Section",
         startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         startTime: "10:00 AM",
-        duration: "1 hr",
+        endTime: "11:00 AM",
         repeat: "weekly",
         staffId: "coach-santiago",
+        daysOfWeek: ["Monday", "Wednesday"],
         recurringDates: [new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)],
       }
 
@@ -74,7 +65,9 @@ export function SectionDebug({ sections, onTestSave }: SectionDebugProps) {
               <div key={section.id} className="text-xs p-2 border rounded">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{index + 1}</Badge>
-                  <span className="font-medium">{section.name}</span>
+                  <span className="font-medium">
+                    {section.daysOfWeek.join(", ")} • {section.startTime} - {section.endTime}
+                  </span>
                   <Badge variant="outline">{section.repeat}</Badge>
                 </div>
                 <div className="mt-1 text-muted-foreground">

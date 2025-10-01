@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -49,7 +49,11 @@ interface CalendarWeekProps {
   className?: string
 }
 
-export default function CalendarWeek({ onEventClick, className }: CalendarWeekProps) {
+export interface CalendarWeekHandle {
+  refresh: () => void
+}
+
+const CalendarWeek = forwardRef<CalendarWeekHandle, CalendarWeekProps>(({ onEventClick, className }, ref) => {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -160,10 +164,11 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
     }
   }, [getTeamColor, toast])
 
-  // Initial effect
+  // Initial effect - load once on mount
   useEffect(() => {
     loadData()
-  }, [loadData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Filter events
   const filteredEvents = events.filter(event => {
@@ -192,6 +197,11 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
   const handleRefresh = useCallback(() => {
     loadData()
   }, [loadData])
+
+  // Expose refresh method to parent
+  useImperativeHandle(ref, () => ({
+    refresh: handleRefresh
+  }), [handleRefresh])
 
   // Function to change view on mobile
   const toggleView = useCallback(() => {
@@ -394,4 +404,9 @@ export default function CalendarWeek({ onEventClick, className }: CalendarWeekPr
       </CardContent>
     </Card>
   )
-}
+})
+
+CalendarWeek.displayName = 'CalendarWeek'
+
+export default CalendarWeek
+export type { CalendarWeekHandle }

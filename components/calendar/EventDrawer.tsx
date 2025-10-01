@@ -125,8 +125,16 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
   useEffect(() => {
     if (open && eventInfo) {
       loadEventData()
+    } else if (!open) {
+      // Reset state when drawer closes
+      setSession(null)
+      setTeamName('')
+      setCoachInfo(null)
+      setEditMode(false)
+      setConfirmDelete(false)
+      setDeleting(false)
     }
-  }, [open, eventInfo])
+  }, [open, eventInfo?.sessionid, eventInfo?.occurrence])
 
   const loadEventData = async () => {
     if (!eventInfo) return
@@ -336,11 +344,20 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
         description: `The practice for ${occurrenceDate.toLocaleDateString()} has been canceled`
       })
       
-      // Close drawer and notify parent to reload calendar
+      // Reset states before closing
+      setDeleting(false)
+      setConfirmDelete(false)
+      setEditMode(false)
+      
+      // Close drawer first
       onClose()
-      if (onEventUpdated) {
-        onEventUpdated()
-      }
+      
+      // Then notify parent to reload calendar (after a small delay to ensure drawer is closed)
+      setTimeout(() => {
+        if (onEventUpdated) {
+          onEventUpdated()
+        }
+      }, 100)
       
     } catch (error) {
       console.error('Error canceling date for session:', error)
@@ -349,7 +366,6 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
         description: "Error canceling practice",
         variant: "destructive"
       })
-    } finally {
       setDeleting(false)
       setConfirmDelete(false)
     }

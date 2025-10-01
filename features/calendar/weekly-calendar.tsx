@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import CalendarWeek from "@/components/calendar/CalendarWeek"
+import { useState, useRef } from "react"
+import CalendarWeek, { CalendarWeekHandle } from "@/components/calendar/CalendarWeek"
 import { EventDrawer } from "@/components/calendar/EventDrawer"
 
 interface WeeklyCalendarProps {
@@ -18,7 +18,7 @@ export function WeeklyCalendar({ events = [] }: WeeklyCalendarProps) {
     occurrence: string
   } | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [calendarKey, setCalendarKey] = useState(0)
+  const calendarRef = useRef<CalendarWeekHandle>(null)
 
   const handleEventClick = (eventInfo: {
     sessionid: string
@@ -34,18 +34,23 @@ export function WeeklyCalendar({ events = [] }: WeeklyCalendarProps) {
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false)
-    setSelectedEvent(null)
+    // Clear selected event after a small delay to prevent flashing
+    setTimeout(() => {
+      setSelectedEvent(null)
+    }, 200)
   }
 
   const handleEventUpdated = () => {
-    // Force calendar re-render by incrementing the key
-    setCalendarKey(prev => prev + 1)
+    // Directly call refresh on calendar if available
+    if (calendarRef.current) {
+      calendarRef.current.refresh()
+    }
   }
 
   return (
     <>
       <CalendarWeek
-        key={calendarKey}
+        ref={calendarRef}
         onEventClick={handleEventClick}
         className="w-full"
       />

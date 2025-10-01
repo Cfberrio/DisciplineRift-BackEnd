@@ -63,15 +63,12 @@ export function useActivityDetection({
   }, [onActivity, onInactive, inactivityThreshold])
 
   useEffect(() => {
-    // Activity events to monitor
+    // Activity events to monitor - removido mousemove y scroll para evitar triggers excesivos
     const events = [
       'mousedown',
-      'mousemove', 
       'keypress',
-      'scroll',
       'touchstart',
       'click',
-      'focus',
     ]
 
     // Throttle activity updates to avoid excessive calls
@@ -102,11 +99,11 @@ export function useActivityDetection({
     // Reset activity counter after prolonged inactivity to allow refreshes again
     const resetCounterInterval = setInterval(() => {
       const timeSinceLastActivity = Date.now() - lastActivityRef.current
-      if (timeSinceLastActivity > 300000) { // 5 minutes of inactivity
+      if (timeSinceLastActivity > 600000) { // 10 minutes of inactivity (aumentado de 5 min)
         activityCountRef.current = 0
         console.log('Activity counter reset after prolonged inactivity')
       }
-    }, 60000) // Check every minute
+    }, 120000) // Check every 2 minutes (reducido de 1 min para menos overhead)
 
     return () => {
       clearTimeout(initTimeout)

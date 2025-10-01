@@ -12,18 +12,42 @@ interface TimePickerProps {
   label?: string
   error?: string
   disabled?: boolean
+  minHour?: number // Hora mínima (0-23)
+  maxHour?: number // Hora máxima (0-23)
+  interval?: number // Intervalo en minutos (por defecto 15)
 }
 
-export function TimePicker({ value, onChange, label, error, disabled }: TimePickerProps) {
+export function TimePicker({ 
+  value, 
+  onChange, 
+  label, 
+  error, 
+  disabled, 
+  minHour = 0, 
+  maxHour = 23,
+  interval = 15 
+}: TimePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
-  const [selectedTime, setSelectedTime] = React.useState(value || "11:30 AM")
   const dropdownRef = React.useRef<HTMLDivElement>(null)
+  
+  // Generate default time based on minHour
+  const getDefaultTime = () => {
+    const time = new Date()
+    time.setHours(minHour, 0, 0, 0)
+    return time.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+  }
+  
+  const [selectedTime, setSelectedTime] = React.useState(value || getDefaultTime())
 
   // Generate time options
   const timeOptions = React.useMemo(() => {
     const times: string[] = []
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
+    for (let hour = minHour; hour <= maxHour; hour++) {
+      for (let minute = 0; minute < 60; minute += interval) {
         const time = new Date()
         time.setHours(hour, minute, 0, 0)
         const timeString = time.toLocaleTimeString("en-US", {
@@ -35,7 +59,7 @@ export function TimePicker({ value, onChange, label, error, disabled }: TimePick
       }
     }
     return times
-  }, [])
+  }, [minHour, maxHour, interval])
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time)

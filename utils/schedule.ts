@@ -65,9 +65,22 @@ export function expandOccurrences(
   const daysOfWeek = parseDaysOfWeek(session.daysofweek || '')
   
   // Parsear fechas canceladas de la columna cancel
-  const canceledDates = session.cancel 
-    ? new Set(session.cancel.split(',').map(date => date.trim()))
-    : new Set<string>()
+  let canceledDates = new Set<string>()
+  if (session.cancel) {
+    try {
+      // Intentar parsear como JSON array primero
+      const parsed = JSON.parse(session.cancel)
+      if (Array.isArray(parsed)) {
+        canceledDates = new Set(parsed.map(date => String(date).trim()))
+      } else {
+        // Si no es array, tratar como string simple
+        canceledDates = new Set([String(parsed).trim()])
+      }
+    } catch {
+      // Si falla el parse JSON, tratar como string separado por comas
+      canceledDates = new Set(session.cancel.split(',').map(date => date.trim()))
+    }
+  }
   
   // Parsear las horas de inicio y fin
   const [startHour, startMinute] = (session.starttime || '00:00').split(':').map(n => parseInt(n, 10))

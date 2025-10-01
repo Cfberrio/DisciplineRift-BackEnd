@@ -23,25 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Plus, Trash2, CalendarDays } from "lucide-react";
+import { Calendar, Plus, Trash2, CalendarDays, RefreshCw } from "lucide-react";
 import { SectionDialog } from "./section-dialog";
 import { SectionDebug } from "./section-debug";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { useSchoolsWithRefresh } from "@/hooks/use-schools-with-refresh";
-
-// Updated Section interface without maxParticipants
-interface Section {
-  id: string;
-  name: string;
-  startDate: Date;
-  startTime: string;
-  duration: string;
-  repeat: string;
-  staffId: string;
-  recurringDates?: Date[];
-}
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Section } from "./types";
 
 /**
  * Interface for the ServiceFormProps
@@ -66,6 +56,7 @@ export function ServiceForm({
   const {
     schools,
     loading: schoolsLoading,
+    error: schoolsError,
     refreshData: refreshSchools,
   } = useSchoolsWithRefresh();
 
@@ -349,19 +340,42 @@ export function ServiceForm({
             <h3 className="text-lg font-medium">School</h3>
             <div className="space-y-2">
               <Label htmlFor="school">Seleccionar Escuela *</Label>
+              
+              {schoolsError && (
+                <Alert variant="destructive" className="mb-2">
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>Error al cargar escuelas: {schoolsError}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={refreshSchools}
+                      disabled={schoolsLoading}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${schoolsLoading ? 'animate-spin' : ''}`} />
+                      Reintentar
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Select
                 value={formData.schoolId?.toString() || ""}
                 onValueChange={(value) =>
                   handleChange("schoolId", Number.parseInt(value))
                 }
-                disabled={isLoading || schoolsLoading}
+                disabled={isLoading || schoolsLoading || !!schoolsError}
               >
                 <SelectTrigger>
                   <SelectValue
                     placeholder={
                       schoolsLoading
-                        ? "Loading schools..."
-                        : "Select a school"
+                        ? "Cargando escuelas..."
+                        : schoolsError
+                        ? "Error cargando escuelas - Haz clic en Reintentar"
+                        : schools.length === 0
+                        ? "No hay escuelas disponibles"
+                        : "Seleccionar escuela"
                     }
                   />
                 </SelectTrigger>
@@ -381,7 +395,7 @@ export function ServiceForm({
                   ))}
                 </SelectContent>
               </Select>
-              {formData.schoolId && (
+              {formData.schoolId && !schoolsError && (
                 <p className="text-sm text-muted-foreground">
                   Escuela seleccionada:{" "}
                   <strong>{getSelectedSchoolName()}</strong>
@@ -458,7 +472,9 @@ export function ServiceForm({
                     >
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{section.name}</span>
+                          <span className="font-medium">
+                            Sesión {section.daysOfWeek.join(", ")}
+                          </span>
                           <Badge variant="outline" className="text-xs">
                             {formatRepeatPattern(section.repeat)}
                           </Badge>
@@ -468,7 +484,7 @@ export function ServiceForm({
                           {format(section.startDate, "EEE, d MMM yyyy", {
                             locale: es,
                           })}{" "}
-                          • {section.startTime} • {section.duration}
+                          • {section.startTime} - {section.endTime}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Instructor: {section.staffId}

@@ -24,18 +24,8 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { RepeatSelect } from "@/components/ui/repeat-select";
 import { cn } from "@/lib/utils";
 import { staffApi } from "@/lib/api/staff-api";
-
-interface Section {
-  id: string;
-  startDate: Date;
-  endDate: Date;
-  startTime: string;
-  endTime: string;
-  repeat: string;
-  staffId: string;
-  daysOfWeek: string[];
-  recurringDates?: Date[];
-}
+import { withRetry } from "@/lib/api/api-retry";
+import type { Section } from "./types";
 
 interface Staff {
   id: string;
@@ -72,8 +62,8 @@ export function SectionDialog({
   const [formData, setFormData] = React.useState({
     startDate: new Date(),
     endDate: new Date(),
-    startTime: "",
-    endTime: "",
+    startTime: "1:00 PM",
+    endTime: "2:00 PM",
     repeat: "none",
     staffId: "",
     daysOfWeek: [] as string[],
@@ -98,15 +88,27 @@ export function SectionDialog({
     setIsLoadingStaff(true);
     setStaffError(null);
     try {
-      console.log("Fetching staff data using staffApi...");
-      const staffData = await staffApi.getAll();
-      console.log("Fetched staff data:", staffData);
+      console.log("SectionDialog: Fetching staff...");
+      
+      const staffData = await withRetry(
+        () => staffApi.getAll(),
+        {
+          maxRetries: 3,
+          baseTimeout: 60000, // 60 segundos
+          retryDelay: 2000,
+          onRetry: (attempt, error) => {
+            console.log(`SectionDialog: Reintentando cargar coaches (${attempt}/3)...`, error.message);
+          },
+        }
+      );
+      
+      console.log("SectionDialog: Fetched staff:", staffData);
       setStaff(staffData);
-      console.log(`Successfully loaded ${staffData.length} staff members`);
+      console.log(`SectionDialog: Successfully loaded ${staffData.length} staff members`);
     } catch (error) {
-      console.error("Error fetching staff:", error);
+      console.error("SectionDialog: Error fetching staff:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+        error instanceof Error ? error.message : "Error desconocido al cargar coaches";
       setStaffError(errorMessage);
       setStaff([]);
     } finally {
@@ -144,8 +146,8 @@ export function SectionDialog({
         setFormData({
           startDate: new Date(),
           endDate: new Date(),
-          startTime: "",
-          endTime: "",
+          startTime: "1:00 PM",
+          endTime: "2:00 PM",
           repeat: "none",
           staffId: "",
           daysOfWeek: [],
@@ -560,6 +562,9 @@ export function SectionDialog({
                 onChange={(time) =>
                   setFormData((prev) => ({ ...prev, startTime: time }))
                 }
+                minHour={13}
+                maxHour={16}
+                interval={15}
               />
             </div>
 
@@ -570,6 +575,9 @@ export function SectionDialog({
                 onChange={(time) =>
                   setFormData((prev) => ({ ...prev, endTime: time }))
                 }
+                minHour={13}
+                maxHour={16}
+                interval={15}
               />
             </div>
           </div>
