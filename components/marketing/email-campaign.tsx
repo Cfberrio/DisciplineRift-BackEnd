@@ -24,60 +24,7 @@ interface EmailTemplate {
 
 // Sample templates in English with database variables
 const sampleTemplates: EmailTemplate[] = [
-  {
-    id: 1,
-    name: "Training Reminder",
-    subject: "Reminder: {TEAM_NAME} Training Session for {STUDENT_NAME}",
-    content: `
-      <h2>Hello {PARENT_NAME},</h2>
-      <p>This is a reminder that <strong>{STUDENT_NAME}</strong> (Grade: {STUDENT_GRADE}) has a training session with <strong>{TEAM_NAME}</strong>.</p>
-      <p><strong>Training Details:</strong></p>
-      <ul>
-        <li>Team: {TEAM_NAME}</li>
-        <li>Coach: {COACH_NAME}</li>
-        <li>Location: {SCHOOL_LOCATION}</li>
-        <li>School: {SCHOOL_NAME}</li>
-        <li>Team Fee: {TEAM_PRICE}</li>
-      </ul>
-      <p><strong>Team Description:</strong> {TEAM_DESCRIPTION}</p>
-      <p>Don't forget to bring all necessary equipment!</p>
-      <p>If you have any questions, please contact us at your convenience.</p>
-      <p>Best regards,<br>The {SCHOOL_NAME} Team</p>
-    `,
-    category: "Reminder"
-  },
-  {
-    id: 2,
-    name: "General Team Information",
-    subject: "Important information about {TEAM_NAME} - {STUDENT_NAME}",
-    content: `
-      <h2>Dear {PARENT_NAME},</h2>
-      <p>We wanted to share some important information about <strong>{STUDENT_NAME}'s</strong> team: <strong>{TEAM_NAME}</strong>.</p>
-      
-      <h3>Team Details:</h3>
-      <ul>
-        <li><strong>Team:</strong> {TEAM_NAME}</li>
-        <li><strong>Coach:</strong> {COACH_NAME}</li>
-        <li><strong>School:</strong> {SCHOOL_NAME}</li>
-        <li><strong>Location:</strong> {SCHOOL_LOCATION}</li>
-        <li><strong>Fee:</strong> {TEAM_PRICE}</li>
-      </ul>
-      
-      <h3>About the Team:</h3>
-      <p>{TEAM_DESCRIPTION}</p>
-      
-      <h3>Student Information:</h3>
-      <ul>
-        <li><strong>Student:</strong> {STUDENT_NAME}</li>
-        <li><strong>Grade:</strong> {STUDENT_GRADE}</li>
-      </ul>
-      
-      <p>We look forward to a great season ahead!</p>
-      <p>If you have any questions, please don't hesitate to contact us.</p>
-      <p>Best regards,<br>The {SCHOOL_NAME} Team</p>
-    `,
-    category: "Information"
-  }
+  
 ]
 
 interface EmailCampaignProps {
@@ -99,18 +46,12 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
   const [sendMessage, setSendMessage] = useState("")
   
   // Template upload states
-  const [uploadedPdf, setUploadedPdf] = useState<File | null>(null)
-  const [uploadedPngTemplate, setUploadedPngTemplate] = useState<File | null>(null)
-  const [pdfContent, setPdfContent] = useState<string>("")
-  const [isExtractingPdf, setIsExtractingPdf] = useState(false)
   const [isHtmlMode, setIsHtmlMode] = useState(false)
   const [htmlContent, setHtmlContent] = useState("")
+  const [additionalInfo, setAdditionalInfo] = useState("")
   
   // SMS states
   const [smsMessage, setSmsMessage] = useState("")
-  
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const pngInputRef = useRef<HTMLInputElement>(null)
 
   const selectedTemplateData = selectedTemplate 
     ? sampleTemplates.find(t => t.id === selectedTemplate)
@@ -121,27 +62,22 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
       setIsHtmlMode(true)
       setIsCustomTemplate(false)
       setSelectedTemplate(null)
-      setUploadedPdf(null)
-      setUploadedPngTemplate(null)
-      setPdfContent("")
       setCustomSubject("")
       setHtmlContent("")
+      setAdditionalInfo("")
     } else if (value === "custom") {
       setIsCustomTemplate(true)
       setIsHtmlMode(false)
       setSelectedTemplate(null)
-      setUploadedPdf(null)
-      setUploadedPngTemplate(null)
-      setPdfContent("")
+      setCustomSubject("Important Information - {TEAM_NAME}")
+      setAdditionalInfo("")
     } else {
       const templateId = parseInt(value)
       if (!isNaN(templateId)) {
         setSelectedTemplate(templateId)
         setIsCustomTemplate(false)
         setIsHtmlMode(false)
-        setUploadedPdf(null)
-        setUploadedPngTemplate(null)
-        setPdfContent("")
+        setAdditionalInfo("")
         
         const template = sampleTemplates.find(t => t.id === templateId)
         if (template) {
@@ -152,78 +88,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     }
   }
 
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || file.type !== 'application/pdf') {
-      setSendStatus("error")
-      setSendMessage("Please select a valid PDF file")
-      return
-    }
-
-    setUploadedPdf(file)
-    setIsExtractingPdf(true)
-    setSendStatus("idle")
-    
-    try {
-      const formData = new FormData()
-      formData.append('pdf', file)
-      
-      const response = await fetch('/api/marketing/extract-pdf', {
-        method: 'POST',
-        body: formData
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to extract text from PDF')
-      }
-      
-      const result = await response.json()
-      const extractedText = result.text || result.content || ""
-      
-      setPdfContent(extractedText)
-      setCustomContent(extractedText)
-      setCustomSubject("Content from uploaded PDF")
-      setSendStatus("success")
-      setSendMessage("PDF content extracted successfully")
-      
-    } catch (error) {
-      setSendStatus("error")
-      setSendMessage("Failed to extract text from PDF")
-      console.error('Error extracting PDF:', error)
-    } finally {
-      setIsExtractingPdf(false)
-    }
-  }
-
-  const handlePngUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || !file.type.startsWith('image/')) {
-      setSendStatus("error")
-      setSendMessage("Please select a valid image file (PNG, JPG, etc.)")
-      return
-    }
-
-    setUploadedPngTemplate(file)
-    setCustomSubject("Custom Template Email")
-    setCustomContent("Your message content will be overlaid on the template image.")
-    setSendStatus("success")
-    setSendMessage("Template image uploaded successfully")
-  }
-
-  const clearPdfUpload = () => {
-    setUploadedPdf(null)
-    setPdfContent("")
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-    }
-  }
-
-  const clearPngUpload = () => {
-    setUploadedPngTemplate(null)
-    if (pngInputRef.current) {
-      pngInputRef.current.value = ""
-    }
-  }
 
   const handleSendSMS = async () => {
     if (!selectedTeamId || selectedParents.length === 0) {
@@ -329,6 +193,13 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
         setSendMessage("You must provide a subject and HTML content for the email")
         return
       }
+    } else if (isCustomTemplate) {
+      // Para DR Team Details solo requiere subject, additionalInfo es opcional
+      if (!customSubject.trim()) {
+        setSendStatus("error")
+        setSendMessage("You must provide a subject for the email")
+        return
+      }
     } else {
       if (!customSubject.trim() || !customContent.trim()) {
         setSendStatus("error")
@@ -341,13 +212,165 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
       setIsSending(true)
       setSendStatus("idle")
       
+      // Plantilla HTML personalizada
+      let finalContent = isHtmlMode ? htmlContent : customContent
+      let useHtmlMode = isHtmlMode
+      
+      if (isCustomTemplate) {
+        useHtmlMode = true
+        
+        // Cargar imágenes y convertirlas a base64
+        const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
+          try {
+            const response = await fetch(imagePath)
+            const blob = await response.blob()
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onloadend = () => resolve(reader.result as string)
+              reader.onerror = reject
+              reader.readAsDataURL(blob)
+            })
+          } catch (error) {
+            console.error(`Error loading image ${imagePath}:`, error)
+            return ''
+          }
+        }
+
+        const headerImageBase64 = await loadImageAsBase64('/Header.png')
+        const footerImageBase64 = await loadImageAsBase64('/Footer.png')
+        const groupImageBase64 = await loadImageAsBase64('/Group 3.png')
+        
+        console.log('[CLIENT] Images loaded:', {
+          headerLoaded: !!headerImageBase64,
+          footerLoaded: !!footerImageBase64,
+          groupLoaded: !!groupImageBase64
+        })
+        
+        finalContent = `
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>${customSubject}</title>
+    <style>
+      body { margin:0; padding:0; background:#f5f5f5; }
+      table { border-collapse:collapse; }
+      img { display:block; line-height:0; font-size:0; border:0; }
+      .wrapper { width:100%; background:#f5f5f5; }
+      .container { width:600px; max-width:600px; margin:0 auto; }
+      .px { padding-left:24px; padding-right:24px; }
+      .content { font-family: Arial, Helvetica, sans-serif; color:#0b0b0b; font-size:16px; line-height:1.5; }
+      .brand-blue { color:#0B86C6; }
+      .title {
+        font-weight:800;
+        font-size:28px;
+        letter-spacing:0.5px;
+        text-transform:uppercase;
+        margin: 18px 0 6px 0;
+      }
+      .underline {
+        height:6px; width:120px; background:#0B86C6; border-radius:3px; margin:0 0 18px 0;
+      }
+      .lead { font-size:15px; color:#222; margin:0 0 22px 0; }
+      .label { font-weight:800; color:#0B86C6; font-size:22px; }
+      .value { font-size:18px; color:#111; }
+      .spacer-8 { height:8px; line-height:8px; font-size:8px; }
+      .spacer-12 { height:12px; line-height:12px; font-size:12px; }
+      .spacer-16 { height:16px; line-height:16px; font-size:16px; }
+      .box-note {
+        border-radius:12px; border:1px solid #e6eef5; background:#f8fcff; padding:16px; font-size:14px; color:#333;
+      }
+      .footer-space { height:24px; line-height:24px; font-size:24px; }
+      @media (max-width:620px) {
+        .container { width:100% !important; }
+        .title { font-size:24px !important; }
+        .label { font-size:18px !important; }
+        .value { font-size:14px !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <center class="wrapper">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td>
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td>
+                  <img src="${headerImageBase64}" width="600" alt="Header" />
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" class="container content" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
+              <tr>
+                <td class="px" style="background-color: #ffffff;">
+                  <div class="title brand-blue">Hello, {PARENT_NAME}</div>
+                  <div class="underline" aria-hidden="true"></div>
+
+                  <p class="lead">
+                    We wanted to share important information about <strong>{STUDENT_NAME}</strong>'s participation in
+                    <strong>{TEAM_NAME}</strong>.
+                  </p>
+
+                  <div style="text-align: center; margin: 8px 0 18px 0;">
+                    <img src="${groupImageBase64}" alt="Team Details" style="max-width: 100%; height: auto; display: inline-block;" />
+                  </div>
+
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td width="40%" valign="middle" class="label" style="text-align: left;">Coach</td>
+                      <td width="60%" valign="middle" class="value" style="text-align: right;">{COACH_NAME}</td>
+                    </tr>
+                    <tr><td class="spacer-12" colspan="2">&nbsp;</td></tr>
+                    <tr>
+                      <td valign="middle" class="label" style="text-align: left;">Location</td>
+                      <td valign="middle" class="value" style="text-align: right;">{SCHOOL_LOCATION}</td>
+                    </tr>
+                    <tr><td class="spacer-12" colspan="2">&nbsp;</td></tr>
+                    <tr>
+                      <td valign="middle" class="label" style="text-align: left;">School</td>
+                      <td valign="middle" class="value" style="text-align: right;">{SCHOOL_NAME}</td>
+                    </tr>
+                  </table>
+
+                  <div class="spacer-16">&nbsp;</div>
+
+                  <div class="box-note">
+                    ${additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
+                  </div>
+
+                  <div class="spacer-16">&nbsp;</div>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+              <tr><td class="footer-space">&nbsp;</td></tr>
+              <tr>
+                <td>
+                  <img src="${footerImageBase64}" width="600" alt="Footer" />
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+      </table>
+    </center>
+  </body>
+</html>
+        `
+      }
+      
       const requestPayload = {
         teamId: selectedTeamId,
         parentIds: selectedParents,
         subject: customSubject,
-        content: isHtmlMode ? htmlContent : customContent,
+        content: finalContent,
         templateId: selectedTemplate,
-        isHtml: isHtmlMode
+        isHtml: useHtmlMode
       }
       
       console.log('[CLIENT] Sending email request:', {
@@ -356,7 +379,8 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
         hasSubject: !!requestPayload.subject,
         hasContent: !!requestPayload.content,
         contentLength: requestPayload.content?.length,
-        isHtml: requestPayload.isHtml
+        isHtml: requestPayload.isHtml,
+        hasCustomTemplate: isCustomTemplate
       })
       
       const response = await fetch("/api/marketing/send-email", {
@@ -484,10 +508,9 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     setCustomContent("")
                     setSmsMessage("")
                     setIsCustomTemplate(false)
-                    setUploadedPdf(null)
-                    setUploadedPngTemplate(null)
                     setHtmlContent("")
                     setIsHtmlMode(false)
+                    setAdditionalInfo("")
                     setSendStatus("idle")
                     setSendMessage("")
                   }}
@@ -501,21 +524,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
             </CardContent>
           </Card>
 
-          {/* Hidden file inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf"
-            onChange={handlePdfUpload}
-            className="hidden"
-          />
-          <input
-            ref={pngInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePngUpload}
-            className="hidden"
-          />
 
           {/* Step 1: Team Selection */}
           <Card>
@@ -575,8 +583,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <Label htmlFor="template-select">Email Template</Label>
                   <Select 
                     value={
-                      uploadedPdf ? "pdf" :
-                      uploadedPngTemplate ? "custom" :
                       isHtmlMode ? "html" :
                       selectedTemplate?.toString() ||
                       (isCustomTemplate ? "custom" : "")
@@ -596,8 +602,8 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                       {!isHtmlMode && (
                         <SelectItem value="custom">
                           <div className="flex items-center gap-2">
-                            <Upload className="h-4 w-4" />
-                            Upload Custom Template
+                            <FileText className="h-4 w-4" />
+                            DR Team Details Template
                           </div>
                         </SelectItem>
                       )}
@@ -612,65 +618,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* PDF Upload Status */}
-                {uploadedPdf && (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <File className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <p className="font-medium text-blue-900">PDF Uploaded</p>
-                          <p className="text-sm text-blue-700">{uploadedPdf.name}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearPdfUpload}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {isExtractingPdf && (
-                      <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Extracting text from PDF...
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* PNG Template Upload Status */}
-                {uploadedPngTemplate && (
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <File className="h-5 w-5 text-green-600" />
-                        <div>
-                          <p className="font-medium text-green-900">Template Image Uploaded</p>
-                          <p className="text-sm text-green-700">{uploadedPngTemplate.name}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearPngUpload}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="mt-3">
-                      <img 
-                        src={URL.createObjectURL(uploadedPngTemplate)} 
-                        alt="Template preview" 
-                        className="max-w-full h-auto rounded border max-h-40 object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* HTML Mode Editor */}
                 {isHtmlMode && (
@@ -755,34 +702,56 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   </div>
                 )}
 
-                {/* Custom template upload buttons */}
-                {isCustomTemplate && !uploadedPdf && !uploadedPngTemplate && (
+                {/* DR Team Details Template - Additional Information */}
+                {isCustomTemplate && (
                   <div className="space-y-4">
-                    <h4 className="font-medium">Upload Custom Template</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Button 
-                        onClick={() => fileInputRef.current?.click()}
-                        variant="outline" 
-                        className="h-32 flex flex-col items-center justify-center space-y-2 border-dashed"
-                      >
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                        <div className="text-center">
-                          <div className="font-medium">Upload PDF</div>
-                          <div className="text-xs text-muted-foreground">Extract text content from PDF</div>
-                        </div>
-                      </Button>
-                      
-                      <Button 
-                        onClick={() => pngInputRef.current?.click()}
-                        variant="outline" 
-                        className="h-32 flex flex-col items-center justify-center space-y-2 border-dashed"
-                      >
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                        <div className="text-center">
-                          <div className="font-medium">Upload Image Template</div>
-                          <div className="text-xs text-muted-foreground">PNG, JPG or other image formats</div>
-                        </div>
-                      </Button>
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h5 className="font-medium text-blue-900 mb-2">Available Dynamic Variables</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_GRADE}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{COACH_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_LOCATION}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_PRICE}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_DESCRIPTION}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_EMAIL}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_PHONE}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SESSION_DATE}"}</Badge>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-2">
+                        Copy and paste these variables into your subject or message content. They will be automatically replaced with actual data when sending.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-subject">Email Subject</Label>
+                      <Input
+                        id="custom-subject"
+                        value={customSubject}
+                        onChange={(e) => setCustomSubject(e.target.value)}
+                        placeholder="Example: Important Information - {TEAM_NAME}"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        You can use variables like {"{TEAM_NAME}"}, {"{PARENT_NAME}"}, etc.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="additional-info">Custom Message Content</Label>
+                      <Textarea
+                        id="additional-info"
+                        value={additionalInfo}
+                        onChange={(e) => setAdditionalInfo(e.target.value)}
+                        placeholder="Example: Please remember to bring your equipment. Training starts at 5:00 PM sharp. You can use variables like {PARENT_NAME}, {STUDENT_NAME}, {TEAM_NAME}, etc."
+                        className="min-h-[150px]"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This text will appear in the blue box section of the email (without a title). If left empty, 
+                        a default message will be displayed. You can use dynamic variables.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -790,8 +759,128 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
             </Card>
           )}
 
+          {/* DR Team Details Template Preview */}
+          {isCustomTemplate && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Template Preview</CardTitle>
+                <CardDescription>
+                  Preview of DR Team Details Email Template
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div 
+                  className="border rounded-lg overflow-hidden"
+                  style={{
+                    width: '100%',
+                    maxWidth: '900px',
+                    margin: '0 auto',
+                    backgroundColor: '#f5f5f5',
+                    transform: 'scale(1)',
+                    transformOrigin: 'top center'
+                  }}
+                >
+                  <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff' }}>
+                    {/* Header Image */}
+                    <img 
+                      src="/Header.png" 
+                      alt="Header" 
+                      style={{ width: '100%', display: 'block' }}
+                    />
+                    
+                    {/* Content */}
+                    <div style={{ padding: '32px', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: '#ffffff' }}>
+                    {/* Title */}
+                    <div style={{
+                      fontWeight: 800,
+                      fontSize: '36px',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      color: '#0B86C6',
+                      margin: '20px 0 8px 0'
+                    }}>
+                      Hello, {'{PARENT_NAME}'}
+                    </div>
+                    
+                    {/* Underline */}
+                    <div style={{
+                      height: '8px',
+                      width: '150px',
+                      backgroundColor: '#0B86C6',
+                      borderRadius: '4px',
+                      margin: '0 0 24px 0'
+                    }}></div>
+                    
+                    {/* Lead text */}
+                    <p style={{ fontSize: '18px', color: '#222', margin: '0 0 28px 0', lineHeight: '1.6' }}>
+                      We wanted to share important information about <strong>{'{STUDENT_NAME}'}</strong>'s participation in <strong>{'{TEAM_NAME}'}</strong>.
+                    </p>
+                    
+                    {/* Team Details Image */}
+                    <div style={{ textAlign: 'center', margin: '12px 0 24px 0' }}>
+                      <img 
+                        src="/Group 3.png" 
+                        alt="Team Details" 
+                        style={{ 
+                          maxWidth: '100%', 
+                          height: 'auto',
+                          display: 'inline-block'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Team Info - Two Column Layout */}
+                    <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 800, color: '#0B86C6', fontSize: '22px' }}>Coach:</span>
+                      <span style={{ fontSize: '18px', color: '#111', textAlign: 'right' }}>{'{COACH_NAME}'}</span>
+                    </div>
+                    
+                    <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 800, color: '#0B86C6', fontSize: '22px' }}>Location:</span>
+                      <span style={{ fontSize: '18px', color: '#111', textAlign: 'right' }}>{'{SCHOOL_LOCATION}'}</span>
+                    </div>
+                    
+                    <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 800, color: '#0B86C6', fontSize: '22px' }}>School:</span>
+                      <span style={{ fontSize: '18px', color: '#111', textAlign: 'right' }}>{'{SCHOOL_NAME}'}</span>
+                    </div>
+                    
+                    <div style={{ height: '16px' }}></div>
+                    
+                    {/* Additional Information Box */}
+                    <div style={{
+                      borderRadius: '14px',
+                      border: '1px solid #e6eef5',
+                      backgroundColor: '#f8fcff',
+                      padding: '24px',
+                      fontSize: '18px',
+                      color: '#333',
+                      lineHeight: '1.6'
+                    }}>
+                      {additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
+                    </div>
+                    
+                    <div style={{ height: '24px' }}></div>
+                  </div>
+                  
+                    {/* Footer Image */}
+                    <img 
+                      src="/Footer.png" 
+                      alt="Footer" 
+                      style={{ width: '100%', display: 'block' }}
+                    />
+                  </div>
+                </div>
+                
+                <p className="text-xs text-center text-muted-foreground mt-4">
+                  All variables will be automatically replaced with actual data when sending the email
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Template Preview */}
-          {selectedTemplateData && !uploadedPdf && !isHtmlMode && (
+          {selectedTemplateData && !isHtmlMode && (
             <Card>
               <CardHeader>
                 <CardTitle>Template Preview</CardTitle>
@@ -817,8 +906,8 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
             </Card>
           )}
 
-          {/* Email Content Customization */}
-          {(selectedTemplate || isCustomTemplate || uploadedPdf || isHtmlMode) && !isHtmlMode && (
+          {/* Email Content Customization - For other templates */}
+          {selectedTemplate && !isHtmlMode && (
             <Card>
               <CardHeader>
                 <CardTitle>Customize Email Content</CardTitle>
@@ -926,9 +1015,9 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
           )}
 
           {/* Send Campaign */}
-          {((selectedTemplate || isCustomTemplate || uploadedPdf || isHtmlMode) && 
+          {((selectedTemplate || isCustomTemplate || isHtmlMode) && 
             campaignType === 'email' && 
-            (isHtmlMode ? htmlContent : customContent) ? "1" : "0") === "1" || 
+            ((isHtmlMode && htmlContent) || (isCustomTemplate && customSubject) || (selectedTemplate && customContent)) ? "1" : "0") === "1" || 
            (campaignType === 'sms' && smsMessage.trim()) ? (
             <Card>
               <CardHeader>
@@ -961,7 +1050,8 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     disabled={
                       isSending || 
                       (campaignType === 'email' && 
-                       ((isHtmlMode ? !htmlContent.trim() : !customContent.trim()) ||
+                       ((isHtmlMode && !htmlContent.trim()) ||
+                        (selectedTemplate && !customContent.trim()) ||
                         !customSubject.trim())) ||
                       (campaignType === 'sms' && !smsMessage.trim()) ||
                       selectedParents.length === 0

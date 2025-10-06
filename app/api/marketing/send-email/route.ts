@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     const { teamId, parentIds, subject, content, templateId, isHtml }: EmailRequest = await request.json()
 
+    
     console.log("[SERVER] POST /api/marketing/send-email - Starting email campaign", {
       selectedTeamId: teamId,
       selectedParentIds: parentIds,
