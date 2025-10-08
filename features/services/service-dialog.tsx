@@ -58,11 +58,15 @@ export function ServiceDialog({ open, onClose, service }: ServiceDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{service ? "Editar Servicio" : "Nuevo Servicio"}</DialogTitle>
-        </DialogHeader>
-        <ServiceForm initialData={service} onSubmit={handleSubmit} onCancel={handleCancel} isLoading={isLoading} />
+      <DialogContent className="max-w-4xl h-[90vh] p-0 gap-0 flex flex-col">
+        <div className="px-6 pt-6 pb-4 border-b flex-shrink-0">
+          <DialogHeader>
+            <DialogTitle>{service ? "Editar Servicio" : "Nuevo Servicio"}</DialogTitle>
+          </DialogHeader>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <ServiceForm initialData={service} onSubmit={handleSubmit} onCancel={handleCancel} isLoading={isLoading} />
+        </div>
       </DialogContent>
     </Dialog>
   )

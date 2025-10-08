@@ -255,9 +255,9 @@ export function ServiceForm({
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border-0 shadow-none">
       <form onSubmit={handleSubmit}>
-        <CardHeader>
+        <CardHeader className="px-0 pt-0">
           <div className="flex items-center justify-between">
             <CardTitle>
               {isEditing ? "Editar Servicio" : "Añadir Nuevo Servicio"}
@@ -272,7 +272,7 @@ export function ServiceForm({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-0">
           {/* Overview Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Información General</h3>
@@ -364,12 +364,12 @@ export function ServiceForm({
                 onValueChange={(value) =>
                   handleChange("schoolId", Number.parseInt(value))
                 }
-                disabled={isLoading || schoolsLoading || !!schoolsError}
+                disabled={isLoading || (schoolsLoading && schools.length === 0) || !!schoolsError}
               >
                 <SelectTrigger>
                   <SelectValue
                     placeholder={
-                      schoolsLoading
+                      schoolsLoading && schools.length === 0
                         ? "Cargando escuelas..."
                         : schoolsError
                         ? "Error cargando escuelas - Haz clic en Reintentar"
@@ -563,7 +563,7 @@ export function ServiceForm({
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between px-0 pb-0">
           <Button
             type="button"
             variant="outline"

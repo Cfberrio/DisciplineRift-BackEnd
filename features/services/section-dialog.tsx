@@ -451,12 +451,12 @@ export function SectionDialog({
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, staffId: value }))
               }
-              disabled={isLoadingStaff}
+              disabled={isLoadingStaff && staff.length === 0}
             >
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    isLoadingStaff
+                    isLoadingStaff && staff.length === 0
                       ? "Cargando instructores..."
                       : staffError
                       ? "Error cargando instructores"
