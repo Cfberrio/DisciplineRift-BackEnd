@@ -3,7 +3,7 @@
 import type React from "react"
 
 import Link from "next/link"
-import { Home, CalendarDays, Layers, School, Users, Mail, LogOut } from "lucide-react"
+import { Home, CalendarDays, Layers, School, Users, Mail, Bell, LogOut } from "lucide-react"
 import { LogoutButton } from "@/components/auth/logout-button"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
@@ -22,6 +22,7 @@ const navItems: NavItemProps[] = [
   { href: "/escuelas", icon: <School className="w-5 h-5" />, label: "Schools" },
   { href: "/staff", icon: <Users className="w-5 h-5" />, label: "Staff" },
   { href: "/marketing", icon: <Mail className="w-5 h-5" />, label: "Email Campaigns" },
+  { href: "/reminders", icon: <Bell className="w-5 h-5" />, label: "Reminders" },
 ]
 
 export function Sidebar() {
