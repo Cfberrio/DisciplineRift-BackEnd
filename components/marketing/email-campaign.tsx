@@ -88,7 +88,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     }
   }
 
-
+  
   const handleSendSMS = async () => {
     if (!selectedTeamId || selectedParents.length === 0) {
       setSendStatus("error")

@@ -13,8 +13,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Award, CheckCircle, AlertCircle, Users } from "lucide-react"
+import { Loader2, Award, CheckCircle, AlertCircle, Users, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { jsPDF } from "jspdf"
+import JSZip from "jszip"
 
 interface Student {
   studentid: string
@@ -107,6 +109,99 @@ export function CertificatesManager() {
     setSelectedStudents(newSelected)
   }
 
+  const createPersonalizedFrontImage = async (imagePath: string, studentName: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      img.onload = () => {
+        // Create canvas with image dimensions
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'))
+          return
+        }
+
+        // Draw the original image
+        ctx.drawImage(img, 0, 0)
+
+        // Configure text style - Montserrat Bold 59.33px, color #404040
+        const fontSize = 59.33
+        ctx.font = `bold ${fontSize}px Montserrat, Arial, sans-serif`
+        ctx.fillStyle = '#404040'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'bottom'
+
+        // Position text centered, above "ON MASTERING"
+        const textX = img.width / 2 // Center horizontally
+        const textY = img.height * 0.35 // Position at 31.5% from top (much lower)
+
+        // Draw student name in uppercase
+        ctx.fillText(studentName.toUpperCase(), textX, textY)
+
+        // Convert canvas to base64
+        resolve(canvas.toDataURL('image/png'))
+      }
+
+      img.onerror = () => {
+        reject(new Error(`Failed to load image: ${imagePath}`))
+      }
+
+      img.src = imagePath
+    })
+  }
+
+  const generatePDFForStudent = async (student: Student, sport: string): Promise<{ filename: string; blob: Blob }> => {
+    const level = student.Level
+    
+    if (!level || level < 1 || level > 6) {
+      throw new Error(`Invalid level ${level} for student ${student.firstname} ${student.lastname}`)
+    }
+
+    // Paths for images
+    const frontImagePath = `/certificates/${sport.toLowerCase()}/Front${level}.png`
+    const backImagePath = `/certificates/${sport.toLowerCase()}/Back${level}.png`
+
+    // Student full name
+    const studentFullName = `${student.firstname} ${student.lastname}`
+
+    // Create personalized front image
+    const personalizedFrontBase64 = await createPersonalizedFrontImage(frontImagePath, studentFullName)
+
+    // Load Back image
+    const backImg = await fetch(backImagePath)
+    const backBlob = await backImg.blob()
+    const backBase64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(backBlob)
+    })
+
+    // Create PDF with landscape orientation
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [792, 612], // Letter size in landscape
+    })
+
+    // Add personalized Front page
+    pdf.addImage(personalizedFrontBase64, 'PNG', 0, 0, 792, 612)
+
+    // Add Back page
+    pdf.addPage()
+    pdf.addImage(backBase64, 'PNG', 0, 0, 792, 612)
+
+    // Generate filename and blob
+    const filename = `${student.firstname}_${student.lastname}.pdf`
+    const pdfBlob = pdf.output('blob')
+
+    return { filename, blob: pdfBlob }
+  }
+
   const handleGenerateCertificates = async () => {
     if (selectedStudents.size === 0) {
       toast({
@@ -117,17 +212,68 @@ export function CertificatesManager() {
       return
     }
 
+    if (!selectedSport) {
+      toast({
+        title: "No sport selected",
+        description: "Please select a sport first",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsGenerating(true)
     try {
-      console.log("[CertificatesManager] Generating certificates for:", Array.from(selectedStudents))
+      console.log("[CertificatesManager] Generating certificates for selected students")
       
-      // TODO: Implement certificate generation API
-      // This will be implemented when the template is provided
+      const zip = new JSZip()
+      let successCount = 0
+      let errorCount = 0
+      const errors: string[] = []
+
+      // Filter selected students
+      const studentsToGenerate = students.filter(student => selectedStudents.has(student.studentid))
+
+      // Generate PDF for each selected student
+      for (const student of studentsToGenerate) {
+        try {
+          const { filename, blob } = await generatePDFForStudent(student, selectedSport)
+          zip.file(filename, blob)
+          successCount++
+          console.log(`[CertificatesManager] Generated certificate for ${student.firstname} ${student.lastname}`)
+        } catch (error) {
+          errorCount++
+          const errorMsg = `${student.firstname} ${student.lastname}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          errors.push(errorMsg)
+          console.error(`[CertificatesManager] Error generating certificate:`, errorMsg)
+        }
+      }
+
+      if (successCount === 0) {
+        throw new Error("Failed to generate any certificates. " + errors.join(", "))
+      }
+
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' })
       
+      // Download ZIP
+      const zipFilename = `Certificates_${selectedSport}_FALL2025.zip`
+      const url = window.URL.createObjectURL(zipBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = zipFilename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
       toast({
-        title: "Certificates ready",
-        description: `Ready to generate ${selectedStudents.size} certificate${selectedStudents.size !== 1 ? 's' : ''}. Template will be applied next.`,
+        title: "Certificates generated",
+        description: `Successfully generated ${successCount} certificate${successCount !== 1 ? 's' : ''}${errorCount > 0 ? `. ${errorCount} failed.` : ''}`,
       })
+
+      if (errors.length > 0) {
+        console.warn("[CertificatesManager] Errors during generation:", errors)
+      }
       
     } catch (err) {
       console.error("[CertificatesManager] Error generating certificates:", err)
@@ -249,7 +395,7 @@ export function CertificatesManager() {
             </div>
           </div>
 
-          {/* Generate Certificates Button */}
+          {/* Download Selected Certificates Button */}
           <div className="flex justify-end">
             <Button
               onClick={handleGenerateCertificates}
@@ -264,9 +410,8 @@ export function CertificatesManager() {
                 </>
               ) : (
                 <>
-                  <Award className="h-4 w-4" />
-                  Generate {selectedStudents.size > 0 ? `${selectedStudents.size} ` : ""}Certificate
-                  {selectedStudents.size !== 1 ? "s" : ""}
+                  <Download className="h-4 w-4" />
+                  Download {selectedStudents.size > 0 ? `${selectedStudents.size} ` : ""}Certificate{selectedStudents.size !== 1 ? "s" : ""}
                 </>
               )}
             </Button>
