@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const sport = searchParams.get("sport")
+    const teamid = searchParams.get("teamid")
 
     if (!sport) {
       return NextResponse.json(
@@ -13,37 +14,59 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log("[API /api/certificates/students] Fetching students for sport:", sport)
+    // If only sport is provided, return teams for that sport
+    if (!teamid) {
+      console.log("[API /api/certificates/students] Fetching teams for sport:", sport)
 
-    // 1. Get teams with the specified sport, isactive=true, and isongoing=false
-    const { data: teams, error: teamsError } = await supabase
+      const { data: teams, error: teamsError } = await supabase
+        .from("team")
+        .select("teamid, name, sport")
+        .eq("sport", sport)
+        .eq("isactive", true)
+        .eq("isongoing", false)
+        .order("name", { ascending: true })
+
+      if (teamsError) {
+        console.error("[API /api/certificates/students] Error fetching teams:", teamsError)
+        return NextResponse.json(
+          { error: "Error fetching teams", details: teamsError.message },
+          { status: 500 }
+        )
+      }
+
+      console.log("[API /api/certificates/students] Found teams:", teams?.length || 0)
+
+      return NextResponse.json({
+        teams: teams || [],
+      })
+    }
+
+    // If both sport and teamid are provided, return students for that team
+    console.log("[API /api/certificates/students] Fetching students for team:", teamid)
+
+    // 1. Verify team exists and matches sport
+    const { data: team, error: teamError } = await supabase
       .from("team")
       .select("teamid, name, sport")
+      .eq("teamid", teamid)
       .eq("sport", sport)
       .eq("isactive", true)
       .eq("isongoing", false)
+      .single()
 
-    if (teamsError) {
-      console.error("[API /api/certificates/students] Error fetching teams:", teamsError)
+    if (teamError || !team) {
+      console.error("[API /api/certificates/students] Team not found or not eligible:", teamError)
       return NextResponse.json(
-        { error: "Error fetching teams", details: teamsError.message },
-        { status: 500 }
+        { error: "Team not found or not eligible" },
+        { status: 404 }
       )
     }
 
-    if (!teams || teams.length === 0) {
-      console.log("[API /api/certificates/students] No eligible teams found for sport:", sport)
-      return NextResponse.json({ students: [] })
-    }
-
-    const teamIds = teams.map((team) => team.teamid)
-    console.log("[API /api/certificates/students] Found eligible teams:", teamIds)
-
-    // 2. Get active enrollments for these teams
+    // 2. Get active enrollments for this team
     const { data: enrollments, error: enrollmentsError } = await supabase
       .from("enrollment")
-      .select("studentid, teamid")
-      .in("teamid", teamIds)
+      .select("studentid")
+      .eq("teamid", teamid)
       .eq("isactive", true)
 
     if (enrollmentsError) {
@@ -56,10 +79,10 @@ export async function GET(request: NextRequest) {
 
     if (!enrollments || enrollments.length === 0) {
       console.log("[API /api/certificates/students] No active enrollments found")
-      return NextResponse.json({ students: [] })
+      return NextResponse.json({ students: [], team })
     }
 
-    const studentIds = [...new Set(enrollments.map((e) => e.studentid))]
+    const studentIds = enrollments.map((e) => e.studentid)
     console.log("[API /api/certificates/students] Found students:", studentIds.length)
 
     // 3. Get student details
@@ -67,6 +90,8 @@ export async function GET(request: NextRequest) {
       .from("student")
       .select("studentid, firstname, lastname, grade, Level")
       .in("studentid", studentIds)
+      .order("lastname", { ascending: true })
+      .order("firstname", { ascending: true })
 
     if (studentsError) {
       console.error("[API /api/certificates/students] Error fetching students:", studentsError)
@@ -80,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       students: students || [],
-      teams: teams,
+      team,
       totalStudents: students?.length || 0,
     })
   } catch (error) {

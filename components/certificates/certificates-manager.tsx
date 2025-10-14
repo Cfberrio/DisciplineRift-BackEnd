@@ -26,6 +26,12 @@ interface Student {
   Level: string | null
 }
 
+interface Team {
+  teamid: string
+  name: string
+  sport: string
+}
+
 const SPORTS = [
   { value: "Volleyball", label: "Volleyball" },
   { value: "Tennis", label: "Tennis" },
@@ -34,30 +40,87 @@ const SPORTS = [
 
 export function CertificatesManager() {
   const [selectedSport, setSelectedSport] = useState<string>("")
+  const [selectedTeam, setSelectedTeam] = useState<string>("")
+  const [teams, setTeams] = useState<Team[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  // Fetch students when sport is selected
+  // Fetch teams when sport is selected
   useEffect(() => {
     if (selectedSport) {
-      fetchStudents()
+      fetchTeams()
     } else {
+      setTeams([])
+      setSelectedTeam("")
       setStudents([])
       setSelectedStudents(new Set())
     }
   }, [selectedSport])
 
-  const fetchStudents = async () => {
-    setIsLoading(true)
+  // Fetch students when team is selected
+  useEffect(() => {
+    if (selectedTeam && selectedSport) {
+      fetchStudents()
+    } else {
+      setStudents([])
+      setSelectedStudents(new Set())
+    }
+  }, [selectedTeam])
+
+  const fetchTeams = async () => {
+    setIsLoadingTeams(true)
     setError(null)
+    setSelectedTeam("")
     try {
-      console.log("[CertificatesManager] Fetching students for sport:", selectedSport)
+      console.log("[CertificatesManager] Fetching teams for sport:", selectedSport)
       
       const response = await fetch(`/api/certificates/students?sport=${encodeURIComponent(selectedSport)}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to fetch teams")
+      }
+
+      const data = await response.json()
+      console.log("[CertificatesManager] Fetched teams:", data)
+      
+      setTeams(data.teams || [])
+
+      if (data.teams.length === 0) {
+        toast({
+          title: "No teams found",
+          description: `No eligible teams found for ${selectedSport}`,
+          variant: "default",
+        })
+      }
+    } catch (err) {
+      console.error("[CertificatesManager] Error fetching teams:", err)
+      const errorMessage = err instanceof Error ? err.message : "Unknown error"
+      setError(errorMessage)
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingTeams(false)
+    }
+  }
+
+  const fetchStudents = async () => {
+    setIsLoadingStudents(true)
+    setError(null)
+    try {
+      console.log("[CertificatesManager] Fetching students for team:", selectedTeam)
+      
+      const response = await fetch(
+        `/api/certificates/students?sport=${encodeURIComponent(selectedSport)}&teamid=${encodeURIComponent(selectedTeam)}`
+      )
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -71,9 +134,10 @@ export function CertificatesManager() {
       setSelectedStudents(new Set())
 
       if (data.students.length === 0) {
+        const teamName = teams.find(t => t.teamid === selectedTeam)?.name || "this team"
         toast({
           title: "No students found",
-          description: `No eligible students found for ${selectedSport}`,
+          description: `No eligible students found for ${teamName}`,
           variant: "default",
         })
       }
@@ -87,7 +151,7 @@ export function CertificatesManager() {
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setIsLoadingStudents(false)
     }
   }
 
@@ -156,7 +220,7 @@ export function CertificatesManager() {
   }
 
   const generatePDFForStudent = async (student: Student, sport: string): Promise<{ filename: string; blob: Blob }> => {
-    const level = student.Level
+    const level = student.Level ? parseInt(student.Level, 10) : null
     
     if (!level || level < 1 || level > 6) {
       throw new Error(`Invalid level ${level} for student ${student.firstname} ${student.lastname}`)
@@ -255,8 +319,12 @@ export function CertificatesManager() {
       // Generate ZIP file
       const zipBlob = await zip.generateAsync({ type: 'blob' })
       
+      // Get team name for ZIP filename
+      const teamName = teams.find(t => t.teamid === selectedTeam)?.name || selectedSport
+      const sanitizedTeamName = teamName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_')
+      const zipFilename = `${sanitizedTeamName}.zip`
+      
       // Download ZIP
-      const zipFilename = `Certificates_${selectedSport}_FALL2025.zip`
       const url = window.URL.createObjectURL(zipBlob)
       const link = document.createElement('a')
       link.href = url
@@ -306,8 +374,42 @@ export function CertificatesManager() {
         </Select>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
+      {/* Team Selection */}
+      {selectedSport && (
+        <div className="space-y-2">
+          <Label htmlFor="team-select">Select Team</Label>
+          <Select 
+            value={selectedTeam} 
+            onValueChange={setSelectedTeam}
+            disabled={isLoadingTeams || teams.length === 0}
+          >
+            <SelectTrigger id="team-select" className="w-full max-w-xs">
+              <SelectValue placeholder={isLoadingTeams ? "Loading teams..." : "Choose a team..."} />
+            </SelectTrigger>
+            <SelectContent>
+              {teams.map((team) => (
+                <SelectItem key={team.teamid} value={team.teamid}>
+                  {team.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {teams.length === 0 && !isLoadingTeams && (
+            <p className="text-sm text-muted-foreground">No eligible teams found for {selectedSport}</p>
+          )}
+        </div>
+      )}
+
+      {/* Loading Teams State */}
+      {isLoadingTeams && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Loading teams...</span>
+        </div>
+      )}
+
+      {/* Loading Students State */}
+      {isLoadingStudents && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           <span className="ml-2 text-muted-foreground">Loading students...</span>
@@ -315,7 +417,7 @@ export function CertificatesManager() {
       )}
 
       {/* Error State */}
-      {error && !isLoading && (
+      {error && !isLoadingTeams && !isLoadingStudents && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -323,7 +425,7 @@ export function CertificatesManager() {
       )}
 
       {/* Students List */}
-      {!isLoading && !error && selectedSport && students.length > 0 && (
+      {!isLoadingStudents && !error && selectedTeam && students.length > 0 && (
         <div className="space-y-4">
           {/* Header with Select All */}
           <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -420,12 +522,12 @@ export function CertificatesManager() {
       )}
 
       {/* No Students State */}
-      {!isLoading && !error && selectedSport && students.length === 0 && (
+      {!isLoadingStudents && !error && selectedTeam && students.length === 0 && (
         <div className="text-center py-12">
           <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No Eligible Students</h3>
           <p className="text-sm text-muted-foreground">
-            No students found for {selectedSport} with active enrollment in completed teams.
+            No students found for the selected team with active enrollment.
           </p>
         </div>
       )}
