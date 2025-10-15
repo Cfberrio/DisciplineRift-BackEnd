@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabase/client";
@@ -44,7 +45,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchServices = async (retryCount = 0) => {
+  const fetchServices = useCallback(async (retryCount = 0) => {
     const maxRetries = 2;
     const baseTimeout = 45000; // 45 seconds base timeout for complex query
     const timeoutMultiplier = retryCount + 1;
@@ -182,13 +183,9 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
       console.error("ServicesContext: Error fetching services:", err);
       const errorMessage = err instanceof Error ? err.message : "Error desconocido";
       
-      // Retry logic for timeout and network errors
+      // Retry logic for timeout and network errors - NO usar setTimeout para evitar loops
       if (retryCount < maxRetries && (errorMessage.includes("timeout") || errorMessage.includes("network") || errorMessage.includes("fetch"))) {
-        console.log(`ServicesContext: Retrying fetch services in ${(retryCount + 1) * 2} seconds...`);
-        setTimeout(() => {
-          fetchServices(retryCount + 1);
-        }, (retryCount + 1) * 2000); // Progressive delay: 2s, 4s, 6s
-        return; // Don't set error state yet, we're retrying
+        console.log(`ServicesContext: Retry ${retryCount + 1}/${maxRetries} failed, but not scheduling automatic retry to prevent loops`);
       }
       
       setError(err as Error);
@@ -199,7 +196,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     }
-  };
+  }, []); // No dependencies to prevent loops
 
   const createService = async (serviceData: any) => {
     try {
@@ -391,8 +388,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         console.log("ServicesContext: All sessions created successfully");
       }
 
-      // Refresh services to show the new service
-      await refreshServices();
+      // NO refrescar automáticamente para evitar loops - el estado local se actualiza en tiempo real
       console.log("ServicesContext: Service creation completed successfully");
     } catch (error) {
       console.error("ServicesContext: Error creating service:", error);
@@ -426,7 +422,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      await refreshServices();
+      // NO refrescar automáticamente para evitar loops - el estado local se actualiza en tiempo real
     } catch (error) {
       console.error("ServicesContext: Error updating service:", error);
       throw error;
@@ -485,8 +481,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         return updatedServices;
       });
 
-      // Also refresh from database to ensure consistency
-      await refreshServices();
+      // NO refrescar automáticamente para evitar loops - el estado local se actualiza en tiempo real
       console.log("ServicesContext: Delete completed successfully");
     } catch (error) {
       console.error("ServicesContext: Error deleting service:", error);
@@ -494,17 +489,17 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refreshServices = async () => {
+  const refreshServices = useCallback(async () => {
     await fetchServices();
-  };
+  }, [fetchServices]);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     await fetchServices();
-  };
+  }, [fetchServices]);
 
   useEffect(() => {
     fetchServices();
-  }, []); // Simple initialization without event listeners
+  }, [fetchServices]); // Incluir fetchServices para asegurar que el useEffect se ejecute correctamente
 
   return (
     <ServicesContext.Provider

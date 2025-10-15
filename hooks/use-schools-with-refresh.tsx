@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSchools } from "@/contexts/schools-context";
 
 /**
@@ -9,18 +9,25 @@ import { useSchools } from "@/contexts/schools-context";
  */
 export function useSchoolsWithRefresh() {
   const schoolsContext = useSchools();
-  const [hasRefreshed, setHasRefreshed] = useState(false);
+  const hasRefreshedRef = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     // Solo refrescar una vez cuando el componente se monta
-    if (!hasRefreshed) {
-      schoolsContext.refreshData();
-      setHasRefreshed(true);
+    if (!hasRefreshedRef.current) {
+      hasRefreshedRef.current = true;
+      schoolsContext.refreshData().finally(() => {
+        setIsReady(true);
+      });
+    } else {
+      setIsReady(true);
     }
-  }, [hasRefreshed, schoolsContext]);
+    // NO incluir schoolsContext como dependencia para evitar loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
   return {
     ...schoolsContext,
-    hasRefreshed,
+    isReady,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { schoolsApi, type School } from "@/lib/api/schools-api";
 import { useToast } from "@/hooks/use-toast";
 import { withRetry } from "@/lib/api/api-retry";
@@ -29,7 +29,7 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchSchools = async () => {
+  const fetchSchools = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -69,23 +69,18 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const createSchool = async (data: Omit<School, "schoolid">) => {
+  const createSchool = useCallback(async (data: Omit<School, "schoolid">) => {
     try {
       console.log("SchoolsContext: Creating school:", data);
       const newSchool = await schoolsApi.create(data);
 
-      // Update local state immediately
+      // Update local state immediately - no need for setTimeout refetch
       setSchools((prev) => {
         const prevArray = Array.isArray(prev) ? prev : [];
         return [...prevArray, newSchool];
       });
-
-      // Trigger a refetch to ensure data consistency
-      setTimeout(() => {
-        fetchSchools();
-      }, 100);
 
       toast({
         title: "Escuela creada",
@@ -100,9 +95,9 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
       });
       throw err;
     }
-  };
+  }, [toast]);
 
-  const updateSchool = async (
+  const updateSchool = useCallback(async (
     id: string,
     data: Partial<Omit<School, "id">>
   ) => {
@@ -110,18 +105,13 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
       console.log("SchoolsContext: Updating school:", id, data);
       const updatedSchool = await schoolsApi.update(id, data);
 
-      // Update local state immediately
+      // Update local state immediately - no need for setTimeout refetch
       setSchools((prev) => {
         const prevArray = Array.isArray(prev) ? prev : [];
         return prevArray.map((s) =>
           s.schoolid.toString() === id ? updatedSchool : s
         );
       });
-
-      // Trigger a refetch to ensure data consistency
-      setTimeout(() => {
-        fetchSchools();
-      }, 100);
 
       toast({
         title: "Escuela actualizada",
@@ -136,23 +126,18 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
       });
       throw err;
     }
-  };
+  }, [toast]);
 
-  const deleteSchool = async (id: string) => {
+  const deleteSchool = useCallback(async (id: string) => {
     try {
       console.log("SchoolsContext: Deleting school:", id);
       await schoolsApi.delete(id);
 
-      // Update local state immediately
+      // Update local state immediately - no need for setTimeout refetch
       setSchools((prev) => {
         const prevArray = Array.isArray(prev) ? prev : [];
         return prevArray.filter((s) => s.schoolid.toString() !== id);
       });
-
-      // Trigger a refetch to ensure data consistency
-      setTimeout(() => {
-        fetchSchools();
-      }, 100);
 
       toast({
         title: "Escuela eliminada",
@@ -167,15 +152,15 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
       });
       throw err;
     }
-  };
+  }, [toast]);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     await fetchSchools();
-  };
+  }, [fetchSchools]);
 
   useEffect(() => {
     fetchSchools();
-  }, []);
+  }, [fetchSchools]);
 
   return (
     <SchoolsContext.Provider

@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { staffApi, type Staff } from "@/lib/api/staff-api";
 import { useToast } from "@/hooks/use-toast";
 import { withRetry } from "@/lib/api/api-retry";
@@ -24,7 +24,7 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -64,9 +64,9 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const createStaff = async (data: Omit<Staff, "id">) => {
+  const createStaff = useCallback(async (data: Omit<Staff, "id">) => {
     try {
       console.log("StaffContext: Creating staff:", data);
       const newStaff = await staffApi.create(data);
@@ -87,9 +87,9 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       });
       throw err;
     }
-  };
+  }, [toast]);
 
-  const updateStaff = async (id: string, data: Partial<Omit<Staff, "id">>) => {
+  const updateStaff = useCallback(async (id: string, data: Partial<Omit<Staff, "id">>) => {
     try {
       console.log("StaffContext: Updating staff:", id, data);
       const updatedStaff = await staffApi.update(id, data);
@@ -110,9 +110,9 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       });
       throw err;
     }
-  };
+  }, [toast]);
 
-  const deleteStaff = async (id: string) => {
+  const deleteStaff = useCallback(async (id: string) => {
     try {
       console.log("StaffContext: Deleting staff:", id);
       await staffApi.delete(id);
@@ -133,11 +133,11 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       });
       throw err;
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchStaff();
-  }, []);
+  }, [fetchStaff]);
 
   return (
     <StaffContext.Provider
