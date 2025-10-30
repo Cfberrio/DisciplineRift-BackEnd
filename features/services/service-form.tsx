@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -71,6 +72,8 @@ export function ServiceForm({
     description: initialData?.description || "",
     status: initialData?.status || "active",
     schoolId: initialData?.schoolId || initialData?.schoolid || undefined, // New field for school selection
+    sport: initialData?.sport || undefined,
+    isongoing: initialData?.isongoing || false,
   });
 
   // State for sections (previously sessions)
@@ -80,6 +83,29 @@ export function ServiceForm({
   const [showDebug, setShowDebug] = useState(false);
 
   const isEditing = !!initialData;
+
+  // Load existing sessions when editing
+  React.useEffect(() => {
+    if (initialData?.sessions && Array.isArray(initialData.sessions)) {
+      console.log("Loading existing sessions for editing:", initialData.sessions);
+      
+      // Convert database sessions to Section format
+      const convertedSections = initialData.sessions.map((session: any) => ({
+        id: session.sessionid?.toString() || Math.random().toString(36).substr(2, 9),
+        startDate: new Date(session.startdate),
+        endDate: session.enddate ? new Date(session.enddate) : undefined,
+        startTime: session.starttime,
+        endTime: session.endtime,
+        daysOfWeek: session.daysofweek ? [session.daysofweek] : [],
+        repeat: session.repeat || "none",
+        duration: "1 hr", // Default duration
+        staffId: session.coachid || "",
+        recurringDates: [], // Would need to calculate this from repeat pattern
+      }));
+      
+      setSections(convertedSections);
+    }
+  }, [initialData]);
 
   /**
    * Handles form input changes
@@ -315,21 +341,52 @@ export function ServiceForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label htmlFor="sport">Sport Type</Label>
               <Select
-                value={formData.status}
-                onValueChange={(value) => handleChange("status", value)}
+                value={formData.sport || ""}
+                onValueChange={(value) => handleChange("sport", value)}
                 disabled={isLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Seleccionar deporte" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="ended">Ended</SelectItem>
+                  <SelectItem value="Volleyball">Volleyball</SelectItem>
+                  <SelectItem value="Tennis">Tennis</SelectItem>
+                  <SelectItem value="Pickleball">Pickleball</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isactive">Active</Label>
+                  <Switch
+                    id="isactive"
+                    checked={formData.status === "active"}
+                    onCheckedChange={(checked) => handleChange("status", checked ? "active" : "inactive")}
+                    disabled={isLoading}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  El servicio está activo y disponible para inscripciones
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isongoing">In Progress</Label>
+                  <Switch
+                    id="isongoing"
+                    checked={formData.isongoing}
+                    onCheckedChange={(checked) => handleChange("isongoing", checked)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  El servicio está actualmente en curso
+                </p>
+              </div>
             </div>
           </div>
 

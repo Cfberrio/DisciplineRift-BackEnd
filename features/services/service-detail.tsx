@@ -34,6 +34,9 @@ interface EnrolledStudent {
   ecname: string;
   ecphone: string;
   ecrelationship: string;
+  StudentDismissal?: string;
+  teacher?: string;
+  medcondition?: string;
   parent?: {
     parentid: string;
     firstname: string;
@@ -126,29 +129,29 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       doc.text(`${service.school || "School"} Roster`, 20, 45);
 
       // Prepare table data
-      const tableData = enrolledStudents.map((student, index) => [
-        `${student.firstname} ${student.lastname}`,
-        calculateAge(student.dob).toString(),
+      const tableData = enrolledStudents.map((student) => [
+        student.firstname || "N/A",
+        student.lastname || "N/A",
+        student.dob || "N/A",
         student.grade || "N/A",
-        getGender(student.firstname),
-        student.parent
-          ? `${student.parent.firstname} ${student.parent.lastname}`
-          : student.ecname || "N/A",
-        student.parent?.phone || student.ecphone || "N/A",
+        student.StudentDismissal || "N/A",
+        student.teacher || "N/A",
+        student.ecname || "N/A",
         student.ecphone || "N/A",
-        student.parent?.email || "N/A",
+        student.medcondition || "N/A",
       ]);
 
       // Table headers
       const headers = [
-        "Participant Name",
-        "Age",
-        "Grade",
-        "Gender",
-        "Guardian Name",
-        "Phone Number",
-        "Emergency #",
-        "Email",
+        "firstname",
+        "lastname",
+        "dob",
+        "grade",
+        "StudentDismissal",
+        "teacher",
+        "ecname",
+        "ecphone",
+        "medcondition",
       ];
 
       // Create table using autoTable function
@@ -171,14 +174,15 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           fillColor: [245, 245, 245], // Light gray for alternate rows
         },
         columnStyles: {
-          0: { cellWidth: 40 }, // Participant Name
-          1: { cellWidth: 15, halign: "center" }, // Age
-          2: { cellWidth: 15, halign: "center" }, // Grade
-          3: { cellWidth: 15, halign: "center" }, // Gender
-          4: { cellWidth: 40 }, // Guardian Name
-          5: { cellWidth: 35 }, // Phone Number
-          6: { cellWidth: 35 }, // Emergency #
-          7: { cellWidth: 50 }, // Email
+          0: { cellWidth: 30 }, // firstname
+          1: { cellWidth: 30 }, // lastname
+          2: { cellWidth: 25, halign: "center" }, // dob
+          3: { cellWidth: 15, halign: "center" }, // grade
+          4: { cellWidth: 25 }, // StudentDismissal
+          5: { cellWidth: 25 }, // teacher
+          6: { cellWidth: 30 }, // ecname
+          7: { cellWidth: 30 }, // ecphone
+          8: { cellWidth: 30 }, // medcondition
         },
         margin: { left: 20, right: 20 },
         tableWidth: "auto",
@@ -240,17 +244,18 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
         service.teamid
       );
 
-      // Add timeout to prevent infinite loading
+      // Add timeout to prevent infinite loading (increased to 60 seconds)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout after 30 seconds")), 30000);
+        setTimeout(() => reject(new Error("Request timeout after 60 seconds")), 60000);
       });
 
-      // Simplified query first - get enrollments only
+      // Simplified query first - get enrollments only (with limit)
       const enrollmentPromise = supabase
         .from("enrollment")
         .select("enrollmentid, studentid, teamid, isactive")
         .eq("teamid", service.teamid)
-        .eq("isactive", true);
+        .eq("isactive", true)
+        .limit(500);
 
       const { data: enrollments, error: enrollmentError } = await Promise.race([
         enrollmentPromise,
@@ -278,7 +283,8 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       const studentIds = enrollments.map((e: any) => e.studentid);
       
       // Fetch students data separately for better performance
-      const studentPromise = supabase
+      // Try with all fields first, then fallback to basic fields if it fails
+      let studentPromise = supabase
         .from("student")
         .select(`
           studentid,
@@ -289,19 +295,51 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           ecname,
           ecphone,
           ecrelationship,
+          StudentDismissal,
+          teacher,
+          medcondition,
           parentid
         `)
-        .in("studentid", studentIds);
+        .in("studentid", studentIds)
+        .limit(500);
 
-      const { data: students, error: studentError } = await Promise.race([
+      let { data: students, error: studentError } = await Promise.race([
         studentPromise,
         timeoutPromise,
       ]) as any;
 
+      // If error (likely because new columns don't exist), try without them
       if (studentError) {
-        console.error("ServiceDetail - Error fetching students:", studentError);
-        setEnrolledStudents([]);
-        return;
+        console.warn("ServiceDetail - Error with extended query, trying basic fields:", studentError);
+        const fallbackPromise = supabase
+          .from("student")
+          .select(`
+            studentid,
+            firstname,
+            lastname,
+            dob,
+            grade,
+            ecname,
+            ecphone,
+            ecrelationship,
+            parentid
+          `)
+          .in("studentid", studentIds)
+          .limit(500);
+
+        const fallbackResult = await Promise.race([
+          fallbackPromise,
+          timeoutPromise,
+        ]) as any;
+
+        students = fallbackResult.data;
+        studentError = fallbackResult.error;
+
+        if (studentError) {
+          console.error("ServiceDetail - Error fetching students (fallback):", studentError);
+          setEnrolledStudents([]);
+          return;
+        }
       }
 
       console.log("ServiceDetail - Found students:", students?.length || 0);
@@ -316,7 +354,8 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
         const parentPromise = supabase
           .from("parent")
           .select("parentid, firstname, lastname, email, phone")
-          .in("parentid", parentIds);
+          .in("parentid", parentIds)
+          .limit(500);
 
         const { data: parentData, error: parentError } = await Promise.race([
           parentPromise,
@@ -342,6 +381,9 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           ecname: student.ecname,
           ecphone: student.ecphone,
           ecrelationship: student.ecrelationship,
+          StudentDismissal: student.StudentDismissal || null,
+          teacher: student.teacher || null,
+          medcondition: student.medcondition || null,
           parent: parent || null,
         };
       }) || [];
@@ -684,28 +726,31 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Participant Name
+                          firstname
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Age
+                          lastname
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Grade
+                          dob
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Gender
+                          grade
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Guardian Name
+                          StudentDismissal
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Phone Number
+                          teacher
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Emergency #
+                          ecname
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          Email
+                          ecphone
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">
+                          medcondition
                         </th>
                       </tr>
                     </thead>
@@ -717,31 +762,32 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
                             index % 2 === 0 ? "bg-white" : "bg-gray-50"
                           }
                         >
-                          <td className="px-3 py-2 font-medium">
-                            {student.firstname} {student.lastname}
+                          <td className="px-3 py-2">
+                            {student.firstname || "N/A"}
                           </td>
-                          <td className="px-3 py-2 text-center">
-                            {calculateAge(student.dob)}
+                          <td className="px-3 py-2">
+                            {student.lastname || "N/A"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {student.dob || "N/A"}
                           </td>
                           <td className="px-3 py-2 text-center">
                             {student.grade || "N/A"}
                           </td>
-                          <td className="px-3 py-2 text-center">
-                            {getGender(student.firstname)}
+                          <td className="px-3 py-2">
+                            {student.StudentDismissal || "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {student.parent
-                              ? `${student.parent.firstname} ${student.parent.lastname}`
-                              : student.ecname || "N/A"}
+                            {student.teacher || "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {student.parent?.phone || student.ecphone || "N/A"}
+                            {student.ecname || "N/A"}
                           </td>
                           <td className="px-3 py-2">
                             {student.ecphone || "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {student.parent?.email || "N/A"}
+                            {student.medcondition || "N/A"}
                           </td>
                         </tr>
                       ))}

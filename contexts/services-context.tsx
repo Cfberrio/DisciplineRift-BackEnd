@@ -23,6 +23,8 @@ interface Service {
   school?: string;
   sessions?: any[];
   enrolledStudents?: number;
+  sport?: "Volleyball" | "Tennis" | "Pickleball";
+  isongoing?: boolean;
 }
 
 interface ServicesContextType {
@@ -68,6 +70,8 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
           price,
           participants,
           isactive,
+          sport,
+          isongoing,
           created_at,
           updated_at,
           school:schoolid (
@@ -149,6 +153,8 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
             school: team.school?.name || "Sin escuela",
             sessions: teamSessions,
             enrolledStudents: enrolledCount,
+            sport: team.sport,
+            isongoing: team.isongoing || false,
           };
         } catch (error) {
           console.error(
@@ -169,6 +175,8 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
             school: team.school?.name || "Sin escuela",
             sessions: [],
             enrolledStudents: 0,
+            sport: team.sport,
+            isongoing: team.isongoing || false,
           };
         }
       });
@@ -210,6 +218,8 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         price: serviceData.price,
         participants: serviceData.participants || 20,
         isactive: serviceData.status === "active",
+        sport: serviceData.sport,
+        isongoing: serviceData.isongoing || false,
       };
 
       console.log("ServicesContext: Creating team with data:", teamInsertData);
@@ -396,7 +406,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateService = async (id: string, serviceData: Partial<Service>) => {
+  const updateService = async (id: string, serviceData: any) => {
     try {
       console.log("ServicesContext: Updating service:", id, serviceData);
 
@@ -411,6 +421,10 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         updateData.participants = serviceData.participants;
       if (serviceData.isactive !== undefined)
         updateData.isactive = serviceData.isactive;
+      if (serviceData.sport !== undefined)
+        updateData.sport = serviceData.sport;
+      if (serviceData.isongoing !== undefined)
+        updateData.isongoing = serviceData.isongoing;
 
       const { error } = await supabase
         .from("team")
@@ -420,6 +434,80 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("ServicesContext: Error updating team:", error);
         throw error;
+      }
+
+      // Update sessions if provided
+      if (serviceData.sections && Array.isArray(serviceData.sections)) {
+        console.log("ServicesContext: Updating sessions for service:", id);
+        
+        // Delete all existing sessions for this team
+        const { error: deleteError } = await supabase
+          .from("session")
+          .delete()
+          .eq("teamid", id);
+
+        if (deleteError) {
+          console.error("ServicesContext: Error deleting old sessions:", deleteError);
+          // Continue anyway to try to create new sessions
+        }
+
+        // Create new sessions
+        for (const section of serviceData.sections) {
+          const startDate =
+            section.startDate instanceof Date
+              ? section.startDate
+              : new Date(section.startDate);
+
+          const dayNames = [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+          ];
+          let dayOfWeek = dayNames[startDate.getDay()];
+
+          if (
+            section.daysOfWeek &&
+            Array.isArray(section.daysOfWeek) &&
+            section.daysOfWeek.length > 0
+          ) {
+            dayOfWeek = section.daysOfWeek[0];
+          }
+
+          let endDate = startDate;
+          if (section.endDate) {
+            endDate = section.endDate instanceof Date
+              ? section.endDate
+              : new Date(section.endDate);
+          }
+
+          const sessionData = {
+            teamid: id,
+            startdate: startDate.toISOString().split("T")[0],
+            enddate: endDate.toISOString().split("T")[0],
+            starttime: section.startTime,
+            endtime: section.endTime,
+            repeat: section.repeat || "none",
+            daysofweek: dayOfWeek,
+            coachid: section.staffId || null,
+          };
+
+          console.log("ServicesContext: Creating updated session:", sessionData);
+
+          const { error: sessionError } = await supabase
+            .from("session")
+            .insert([sessionData]);
+
+          if (sessionError) {
+            console.error("ServicesContext: Error creating session:", sessionError);
+            throw new Error(`Failed to create session: ${sessionError.message}`);
+          }
+        }
+
+        console.log("ServicesContext: All sessions updated successfully");
       }
 
       // NO refrescar automáticamente para evitar loops - el estado local se actualiza en tiempo real
@@ -499,7 +587,7 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchServices();
-  }, [fetchServices]); // Incluir fetchServices para asegurar que el useEffect se ejecute correctamente
+  }, []); // Sin dependencias para prevenir loops infinitos
 
   return (
     <ServicesContext.Provider

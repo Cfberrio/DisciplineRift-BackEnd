@@ -11,6 +11,9 @@ export type Student = {
   ecname: string
   ecphone: string
   ecrelationship: string
+  StudentDismissal?: string
+  teacher?: string
+  medcondition?: string
 }
 
 // Client-side student functions

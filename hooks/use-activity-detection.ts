@@ -11,7 +11,7 @@ interface UseActivityDetectionOptions {
 export function useActivityDetection({
   onActivity,
   onInactive,
-  inactivityThreshold = 25000, // 25 seconds
+  inactivityThreshold = 60000, // 60 seconds - aumentado para evitar loops
 }: UseActivityDetectionOptions = {}) {
   const lastActivityRef = useRef<number>(Date.now())
   const timeoutRef = useRef<NodeJS.Timeout>()
@@ -32,12 +32,12 @@ export function useActivityDetection({
     const shouldTriggerActivity = wasInactive && 
                                  onActivity && 
                                  isInitializedRef.current &&
-                                 timeSinceLastTrigger > 30000 // Minimum 30 seconds between activity triggers
+                                 timeSinceLastTrigger > 60000 // Minimum 60 seconds between activity triggers
 
     if (shouldTriggerActivity) {
       // Additional spam protection: limit activity triggers
       activityCountRef.current += 1
-      if (activityCountRef.current <= 2) { // Max 2 activity triggers per session
+      if (activityCountRef.current <= 1) { // Max 1 activity trigger per session para prevenir loops
         console.log('User activity detected after significant inactivity, refreshing connections...')
         lastActivityTriggerRef.current = now
         onActivity()

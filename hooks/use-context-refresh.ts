@@ -16,7 +16,7 @@ interface UseContextRefreshOptions {
 export function useContextRefresh({
   refreshFunctions,
   refreshOnActivity = true,
-  inactivityThreshold = 25000, // 25 seconds
+  inactivityThreshold = 60000, // 60 seconds - aumentado para evitar loops
 }: UseContextRefreshOptions) {
   const isRefreshingRef = useRef<boolean>(false)
   const lastRefreshRef = useRef<number>(Date.now())
@@ -30,14 +30,14 @@ export function useContextRefresh({
     }
 
     const timeSinceLastRefresh = Date.now() - lastRefreshRef.current
-    if (timeSinceLastRefresh < 10000) { // Minimum 10 seconds between refreshes (increased from 5s)
+    if (timeSinceLastRefresh < 30000) { // Minimum 30 seconds between refreshes para evitar loops
       console.log('Context refresh too recent, skipping...')
       return
     }
 
     // Circuit breaker: prevent too many refreshes in a short period
     refreshCountRef.current += 1
-    if (refreshCountRef.current > 2) { // Reduced from 3 to 2 maximum refreshes
+    if (refreshCountRef.current > 1) { // Max 1 refresh por sesión de inactividad
       console.warn('Too many context refreshes detected, circuit breaker activated. Skipping...')
       return
     }

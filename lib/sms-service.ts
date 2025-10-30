@@ -89,13 +89,35 @@ export const sendSMS = async (options: {
     console.log('[SMS] Sending SMS to:', cleanedTo)
     console.log('[SMS] Message length:', options.message.length)
     
+    // Limpiar el mensaje de emojis y caracteres especiales que pueden causar undelivered
+    let cleanedMessage = options.message
+    // Remover emojis
+    cleanedMessage = cleanedMessage.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+    // Normalizar espacios
+    cleanedMessage = cleanedMessage.replace(/\s+/g, ' ').trim()
+    
+    console.log('[SMS] Original message length:', options.message.length)
+    console.log('[SMS] Cleaned message length:', cleanedMessage.length)
+    if (options.message !== cleanedMessage) {
+      console.log('[SMS] Message was cleaned (emojis/special chars removed)')
+    }
+    
     const message = await client.messages.create({
-      body: options.message,
+      body: cleanedMessage,
       from: cleanedFrom,
-      to: cleanedTo
+      to: cleanedTo,
+      // Configuraciones para A2P 10DLC y mejor deliverability
+      maxPrice: '0.10', // Límite de precio más alto
+      provideFeedback: true, // Solicitar feedback de entrega
+      validityPeriod: 14400 // 4 horas de validez
     })
     
-    console.log('[SMS] SMS sent successfully:', message.sid)
+    console.log('[SMS] SMS sent successfully:', {
+      sid: message.sid,
+      status: message.status,
+      to: message.to,
+      from: message.from
+    })
     return {
       success: true,
       messageId: message.sid,
