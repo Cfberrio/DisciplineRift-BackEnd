@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { TeamSelector } from "./team-selector"
+import { WeekdayTeamSelector } from "./weekday-team-selector"
 import { ParentSelector } from "./parent-selector"
-import { Mail, Send, Users, FileText, AlertCircle, CheckCircle, Loader2, Upload, File, X, MessageSquare, Smartphone, AtSign } from "lucide-react"
+import { Mail, Send, Users, FileText, AlertCircle, CheckCircle, Loader2, Upload, File, X, MessageSquare, Smartphone, AtSign, Calendar } from "lucide-react"
 
 interface EmailTemplate {
   id: number
@@ -34,6 +34,7 @@ interface EmailCampaignProps {
 export function EmailCampaign({ onClose }: EmailCampaignProps) {
   // Estado para seleccionar tipo de campaña
   const [campaignType, setCampaignType] = useState<'email' | 'sms' | null>(null)
+  const [seasonType, setSeasonType] = useState<'current' | 'upcoming' | null>(null)
   
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
   const [selectedParents, setSelectedParents] = useState<string[]>([])
@@ -501,6 +502,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 <Button 
                   onClick={() => {
                     setCampaignType(null)
+                    setSeasonType(null)
                     setSelectedTeamId(null)
                     setSelectedParents([])
                     setSelectedTemplate(null)
@@ -518,39 +520,99 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   size="sm"
                 >
                   <X className="h-4 w-4 mr-2" />
-                  Change Type
+                  Cambiar Tipo
                 </Button>
               </div>
             </CardContent>
           </Card>
 
 
-          {/* Step 1: Team Selection */}
+          {/* Step 1: Season Selection */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Step 1: Select Team
+                <Calendar className="h-5 w-5" />
+                Paso 1: Seleccionar Temporada
               </CardTitle>
               <CardDescription>
-                Choose the team whose parents will receive the {campaignType}
+                Elige entre la temporada actual (equipos activos próximos a comenzar) o la temporada en curso (equipos actualmente en marcha)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TeamSelector 
-                selectedTeamId={selectedTeamId}
-                onTeamSelect={setSelectedTeamId}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button
+                  onClick={() => {
+                    setSeasonType('current')
+                    setSelectedTeamId(null)
+                    setSelectedParents([])
+                  }}
+                  variant={seasonType === 'current' ? 'default' : 'outline'}
+                  className="h-24 flex flex-col items-center justify-center space-y-2"
+                >
+                  <Calendar className="h-8 w-8" />
+                  <div className="text-center">
+                    <div className="font-semibold">Current Season</div>
+                    <div className="text-xs opacity-80">Equipos próximos a comenzar</div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setSeasonType('upcoming')
+                    setSelectedTeamId(null)
+                    setSelectedParents([])
+                  }}
+                  variant={seasonType === 'upcoming' ? 'default' : 'outline'}
+                  className="h-24 flex flex-col items-center justify-center space-y-2"
+                >
+                  <Calendar className="h-8 w-8" />
+                  <div className="text-center">
+                    <div className="font-semibold">Upcoming Season</div>
+                    <div className="text-xs opacity-80">Equipos actualmente en marcha</div>
+                  </div>
+                </Button>
+              </div>
+
+              {seasonType && (
+                <div className="mt-4 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-blue-700 font-medium">
+                    {seasonType === 'current' ? 'Current Season' : 'Upcoming Season'} seleccionada
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Step 2: Parent Selection */}
+          {/* Step 2: Team Selection */}
+          {seasonType && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Paso 2: Seleccionar Equipo por Día de la Semana
+                </CardTitle>
+                <CardDescription>
+                  Los equipos están agrupados por los días en que tienen sesiones. Elige el equipo cuyos padres recibirán el {campaignType}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <WeekdayTeamSelector 
+                  selectedTeamId={selectedTeamId}
+                  onTeamSelect={setSelectedTeamId}
+                  seasonType={seasonType}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 3: Parent Selection */}
           {selectedTeamId && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Step 2: Select Parents
+                  Paso 3: Seleccionar Padres
                 </CardTitle>
                 <CardDescription>
                   Choose which parents will receive the {campaignType}
@@ -572,10 +634,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Step 3: Choose Email Template
+                  Paso 4: Elegir Plantilla de Email
                 </CardTitle>
                 <CardDescription>
-                  Select an email template or create a custom one
+                  Selecciona una plantilla de email o crea una personalizada
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -968,10 +1030,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
-                  Step 3: Compose SMS Message
+                  Paso 4: Redactar Mensaje SMS
                 </CardTitle>
                 <CardDescription>
-                  Write your text message (SMS messages are limited to 160 characters per segment)
+                  Escribe tu mensaje de texto (Los mensajes SMS están limitados a 160 caracteres por segmento)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
