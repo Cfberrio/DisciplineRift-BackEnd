@@ -11,7 +11,7 @@ export type Student = {
   ecname: string
   ecphone: string
   ecrelationship: string
-  StudentDismissal?: string
+  StudentDismisall?: string
   teacher?: string
   medcondition?: string
 }

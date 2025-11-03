@@ -1,10 +1,11 @@
 -- Migration: Add roster fields to student table
 -- Date: 2025-10-30
--- Description: Adds StudentDismissal, teacher, and medcondition columns to student table
+-- Description: Adds studentdismisall, teacher, and medcondition columns to student table
+-- Note: PostgreSQL converts unquoted identifiers to lowercase
 
--- Add StudentDismissal column (student dismissal information)
+-- Add studentdismisall column (student dismissal information)
 ALTER TABLE student 
-ADD COLUMN IF NOT EXISTS StudentDismissal VARCHAR(255);
+ADD COLUMN IF NOT EXISTS studentdismisall VARCHAR(255);
 
 -- Add teacher column (student's teacher name)
 ALTER TABLE student 
@@ -15,7 +16,7 @@ ALTER TABLE student
 ADD COLUMN IF NOT EXISTS medcondition TEXT;
 
 -- Add comments for documentation
-COMMENT ON COLUMN student.StudentDismissal IS 'Student dismissal information or instructions';
+COMMENT ON COLUMN student.studentdismisall IS 'Student dismissal information or instructions';
 COMMENT ON COLUMN student.teacher IS 'Student''s teacher name';
 COMMENT ON COLUMN student.medcondition IS 'Student medical conditions or notes';
 

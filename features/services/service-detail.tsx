@@ -34,7 +34,7 @@ interface EnrolledStudent {
   ecname: string;
   ecphone: string;
   ecrelationship: string;
-  StudentDismissal?: string;
+  StudentDismisall?: string;
   teacher?: string;
   medcondition?: string;
   parent?: {
@@ -116,6 +116,9 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
     setIsGeneratingPdf(true);
 
     try {
+      console.log("ServiceDetail - Generating PDF with students:", enrolledStudents.length);
+      console.log("ServiceDetail - Sample student data for PDF:", enrolledStudents[0]);
+
       const doc = new jsPDF("landscape", "mm", "a4");
 
       // Add logo/header (you can customize this)
@@ -129,29 +132,40 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       doc.text(`${service.school || "School"} Roster`, 20, 45);
 
       // Prepare table data
-      const tableData = enrolledStudents.map((student) => [
-        student.firstname || "N/A",
-        student.lastname || "N/A",
-        student.dob || "N/A",
-        student.grade || "N/A",
-        student.StudentDismissal || "N/A",
-        student.teacher || "N/A",
-        student.ecname || "N/A",
-        student.ecphone || "N/A",
-        student.medcondition || "N/A",
-      ]);
+      const tableData = enrolledStudents.map((student) => {
+        const row = [
+          student.firstname || "N/A",
+          student.lastname || "N/A",
+          student.dob || "N/A",
+          student.grade || "N/A",
+          student.StudentDismisall || "N/A",
+          student.teacher || "N/A",
+          student.ecname || "N/A",
+          student.ecphone || "N/A",
+          student.medcondition || "N/A",
+        ];
+        
+        console.log("ServiceDetail - PDF row data:", {
+          name: `${student.firstname} ${student.lastname}`,
+          StudentDismisall: student.StudentDismisall,
+          teacher: student.teacher,
+          medcondition: student.medcondition
+        });
+        
+        return row;
+      });
 
       // Table headers
       const headers = [
-        "firstname",
-        "lastname",
-        "dob",
-        "grade",
-        "StudentDismissal",
-        "teacher",
-        "ecname",
-        "ecphone",
-        "medcondition",
+        "First Name",
+        "Last Name",
+        "DOB",
+        "Grade",
+        "Dismissal",
+        "Teacher",
+        "Emergency",
+        "Emergency #",
+        "Medcondition",
       ];
 
       // Create table using autoTable function
@@ -174,15 +188,15 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           fillColor: [245, 245, 245], // Light gray for alternate rows
         },
         columnStyles: {
-          0: { cellWidth: 30 }, // firstname
-          1: { cellWidth: 30 }, // lastname
-          2: { cellWidth: 25, halign: "center" }, // dob
-          3: { cellWidth: 15, halign: "center" }, // grade
-          4: { cellWidth: 25 }, // StudentDismissal
-          5: { cellWidth: 25 }, // teacher
-          6: { cellWidth: 30 }, // ecname
-          7: { cellWidth: 30 }, // ecphone
-          8: { cellWidth: 30 }, // medcondition
+          0: { cellWidth: 30 }, // First Name
+          1: { cellWidth: 30 }, // Last Name
+          2: { cellWidth: 25, halign: "center" }, // DOB
+          3: { cellWidth: 15, halign: "center" }, // Grade
+          4: { cellWidth: 25 }, // Dismissal
+          5: { cellWidth: 25 }, // Teacher
+          6: { cellWidth: 30 }, // Emergency
+          7: { cellWidth: 30 }, // Emergency #
+          8: { cellWidth: 30 }, // Medcondition
         },
         margin: { left: 20, right: 20 },
         tableWidth: "auto",
@@ -284,22 +298,11 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       
       // Fetch students data separately for better performance
       // Try with all fields first, then fallback to basic fields if it fails
+      // Note: PostgreSQL converts unquoted column names to lowercase
+      // Try to get all columns first to see what's available
       let studentPromise = supabase
         .from("student")
-        .select(`
-          studentid,
-          firstname,
-          lastname,
-          dob,
-          grade,
-          ecname,
-          ecphone,
-          ecrelationship,
-          StudentDismissal,
-          teacher,
-          medcondition,
-          parentid
-        `)
+        .select("*")
         .in("studentid", studentIds)
         .limit(500);
 
@@ -307,6 +310,14 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
         studentPromise,
         timeoutPromise,
       ]) as any;
+      
+      // Log what columns we actually got
+      if (students && students.length > 0) {
+        console.log("ServiceDetail - Available columns in student table:", Object.keys(students[0]));
+        console.log("ServiceDetail - Columns containing 'dismiss':", 
+          Object.keys(students[0]).filter(k => k.toLowerCase().includes('dismiss'))
+        );
+      }
 
       // If error (likely because new columns don't exist), try without them
       if (studentError) {
@@ -372,6 +383,27 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       // Combine data
       const studentsData = students?.map((student: any) => {
         const parent = parents.find((p: any) => p.parentid === student.parentid);
+        
+        // Try multiple possible column names for dismissal (PostgreSQL case sensitivity)
+        const dismissalValue = student.studentdismisall 
+          || student.StudentDismisall 
+          || student.studentdismissal 
+          || student.StudentDismissal
+          || student.student_dismissal
+          || null;
+        
+        // Log raw student data to verify columns are being retrieved
+        console.log("ServiceDetail - Raw student data:", {
+          studentid: student.studentid,
+          firstname: student.firstname,
+          allKeys: Object.keys(student),
+          studentdismisall: student.studentdismisall,
+          StudentDismisall: student.StudentDismisall,
+          dismissalValue: dismissalValue,
+          teacher: student.teacher,
+          medcondition: student.medcondition
+        });
+        
         return {
           studentid: student.studentid,
           firstname: student.firstname,
@@ -381,14 +413,15 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           ecname: student.ecname,
           ecphone: student.ecphone,
           ecrelationship: student.ecrelationship,
-          StudentDismissal: student.StudentDismissal || null,
-          teacher: student.teacher || null,
-          medcondition: student.medcondition || null,
+          StudentDismisall: dismissalValue,
+          teacher: student.teacher ?? null,
+          medcondition: student.medcondition ?? null,
           parent: parent || null,
         };
       }) || [];
 
       console.log("ServiceDetail - Final processed students data:", studentsData.length);
+      console.log("ServiceDetail - Sample processed student:", studentsData[0]);
       
       // Only update state if we're still looking at the same team
       if (currentTeamId === service?.teamid) {
@@ -726,31 +759,31 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          firstname
+                          First Name
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          lastname
+                          Last Name
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          dob
+                          DOB
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          grade
+                          Grade
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          StudentDismissal
+                          Dismissal
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          teacher
+                          Teacher
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          ecname
+                          Emergency
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          ecphone
+                          Emergency #
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">
-                          medcondition
+                          Medcondition
                         </th>
                       </tr>
                     </thead>
@@ -775,7 +808,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
                             {student.grade || "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {student.StudentDismissal || "N/A"}
+                            {student.StudentDismisall || "N/A"}
                           </td>
                           <td className="px-3 py-2">
                             {student.teacher || "N/A"}
