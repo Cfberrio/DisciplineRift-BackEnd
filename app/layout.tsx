@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { QueryProvider } from "@/lib/providers/query-provider";
 import { ServicesProvider } from "@/contexts/services-context";
 import { SchoolsProvider } from "@/contexts/schools-context";
 import { StaffProvider } from "@/contexts/staff-context";
@@ -35,15 +36,17 @@ export default function RootLayout({
         <RefreshDetector />
         <MetricsProvider>
           <AuthProvider>
-            <SchoolsProvider>
-              <ServicesProvider>
-                <StaffProvider>
-                  {/* <ConnectionManager /> */}
-                  {children}
-                  <Toaster />
-                </StaffProvider>
-              </ServicesProvider>
-            </SchoolsProvider>
+            <QueryProvider>
+              <SchoolsProvider>
+                <ServicesProvider>
+                  <StaffProvider>
+                    {/* <ConnectionManager /> */}
+                    {children}
+                    <Toaster />
+                  </StaffProvider>
+                </ServicesProvider>
+              </SchoolsProvider>
+            </QueryProvider>
           </AuthProvider>
         </MetricsProvider>
       </body>

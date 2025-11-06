@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Users, GraduationCap, UserCheck, Mail, FileText, Bell, Award, LogOut, ChevronLeft, ChevronRight } from "lucide-react"
+import { Home, Calendar, Users, GraduationCap, UserCheck, Mail, FileText, Bell, Award, LogOut, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils"
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Schedule", href: "/agenda", icon: Calendar },
-  { name: "Services", href: "/servicios", icon: Users },
+  // { name: "Services", href: "/servicios", icon: Users }, // Hidden - replaced by Registrations
+  { name: "Registrations", href: "/registrations", icon: ClipboardList },
   { name: "Schools", href: "/escuelas", icon: GraduationCap },
   { name: "Staff", href: "/staff", icon: UserCheck },
   { name: "Applications", href: "/applications", icon: FileText },

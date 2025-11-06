@@ -32,7 +32,7 @@ interface EmailCampaignProps {
 }
 
 export function EmailCampaign({ onClose }: EmailCampaignProps) {
-  // Estado para seleccionar tipo de campaña
+  // State to select campaign type
   const [campaignType, setCampaignType] = useState<'email' | 'sms' | null>(null)
   const [seasonType, setSeasonType] = useState<'current' | 'upcoming' | null>(null)
   
@@ -134,10 +134,15 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
         let errorMessage = `Server returned ${response.status}: ${response.statusText}`
         try {
           const errorData = await response.json()
-          if (errorData.error) {
+          console.error('[CLIENT] Server error details:', errorData)
+          if (errorData.details) {
+            errorMessage = `${errorData.error}: ${errorData.details}`
+          } else if (errorData.error) {
             errorMessage = errorData.error
           }
-          console.error('[CLIENT] Server error details:', errorData)
+          if (errorData.hint) {
+            console.error('[CLIENT] Server hint:', errorData.hint)
+          }
         } catch (parseError) {
           console.error('[CLIENT] Could not parse error response:', parseError)
         }
@@ -249,7 +254,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
         
         finalContent = `
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -307,13 +312,20 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
             <table role="presentation" class="container content" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
               <tr>
                 <td class="px" style="background-color: #ffffff;">
-                  <div class="title brand-blue">Hello, {PARENT_NAME}</div>
+                  <div class="title brand-blue">Hello, {PARENT_FIRSTNAME}</div>
                   <div class="underline" aria-hidden="true"></div>
 
                   <p class="lead">
-                    We wanted to share important information about <strong>{STUDENT_NAME}</strong>'s participation in
-                    <strong>{TEAM_NAME}</strong>.
+                    Here's some information about <strong>{STUDENT_FIRSTNAME}</strong>'s participation in <strong>{TEAM_NAME}</strong>.
                   </p>
+
+                  <div class="spacer-16">&nbsp;</div>
+
+                  <div class="box-note">
+                    ${additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
+                  </div>
+
+                  <div class="spacer-16">&nbsp;</div>
 
                   <div style="text-align: center; margin: 8px 0 18px 0;">
                     <img src="${groupImageBase64}" alt="Team Details" style="max-width: 100%; height: auto; display: inline-block;" />
@@ -335,12 +347,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                       <td valign="middle" class="value" style="text-align: right;">{SCHOOL_NAME}</td>
                     </tr>
                   </table>
-
-                  <div class="spacer-16">&nbsp;</div>
-
-                  <div class="box-note">
-                    ${additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
-                  </div>
 
                   <div class="spacer-16">&nbsp;</div>
                 </td>
@@ -397,10 +403,15 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
         let errorMessage = `Server returned ${response.status}: ${response.statusText}`
         try {
           const errorData = await response.json()
-          if (errorData.error) {
+          console.error('[CLIENT] Server error details:', errorData)
+          if (errorData.details) {
+            errorMessage = `${errorData.error}: ${errorData.details}`
+          } else if (errorData.error) {
             errorMessage = errorData.error
           }
-          console.error('[CLIENT] Server error details:', errorData)
+          if (errorData.hint) {
+            console.error('[CLIENT] Server hint:', errorData.hint)
+          }
         } catch (parseError) {
           console.error('[CLIENT] Could not parse error response:', parseError)
         }
@@ -520,7 +531,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   size="sm"
                 >
                   <X className="h-4 w-4 mr-2" />
-                  Cambiar Tipo
+                  Change Type
                 </Button>
               </div>
             </CardContent>
@@ -532,10 +543,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Paso 1: Seleccionar Temporada
+                Step 1: Select Season
               </CardTitle>
               <CardDescription>
-                Elige entre la temporada actual (equipos activos próximos a comenzar) o la temporada en curso (equipos actualmente en marcha)
+                Choose between current season (active teams about to start) or upcoming season (teams currently running)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -552,7 +563,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <Calendar className="h-8 w-8" />
                   <div className="text-center">
                     <div className="font-semibold">Current Season</div>
-                    <div className="text-xs opacity-80">Equipos próximos a comenzar</div>
+                    <div className="text-xs opacity-80">Teams about to start</div>
                   </div>
                 </Button>
 
@@ -568,7 +579,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <Calendar className="h-8 w-8" />
                   <div className="text-center">
                     <div className="font-semibold">Upcoming Season</div>
-                    <div className="text-xs opacity-80">Equipos actualmente en marcha</div>
+                    <div className="text-xs opacity-80">Teams currently running</div>
                   </div>
                 </Button>
               </div>
@@ -577,7 +588,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 <div className="mt-4 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                   <span className="text-sm text-blue-700 font-medium">
-                    {seasonType === 'current' ? 'Current Season' : 'Upcoming Season'} seleccionada
+                    {seasonType === 'current' ? 'Current Season' : 'Upcoming Season'} selected
                   </span>
                 </div>
               )}
@@ -590,10 +601,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Paso 2: Seleccionar Equipo por Día de la Semana
+                  Step 2: Select Team by Day of Week
                 </CardTitle>
                 <CardDescription>
-                  Los equipos están agrupados por los días en que tienen sesiones. Elige el equipo cuyos padres recibirán el {campaignType}
+                  Teams are grouped by the days they have sessions. Choose the team whose parents will receive the {campaignType}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -612,7 +623,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Paso 3: Seleccionar Padres
+                  Step 3: Select Parents
                 </CardTitle>
                 <CardDescription>
                   Choose which parents will receive the {campaignType}
@@ -634,10 +645,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Paso 4: Elegir Plantilla de Email
+                  Step 4: Choose Email Template
                 </CardTitle>
                 <CardDescription>
-                  Selecciona una plantilla de email o crea una personalizada
+                  Select an email template or create a custom one
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -691,9 +702,12 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                       <h5 className="font-medium text-blue-900 mb-2">Available Database Variables</h5>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_FIRSTNAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_FIRSTNAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_GRADE}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SPORT}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{COACH_NAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_NAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_LOCATION}"}</Badge>
@@ -771,9 +785,12 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                       <h5 className="font-medium text-blue-900 mb-2">Available Dynamic Variables</h5>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_FIRSTNAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_FIRSTNAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_GRADE}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_NAME}"}</Badge>
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SPORT}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{COACH_NAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_NAME}"}</Badge>
                         <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_LOCATION}"}</Badge>
@@ -861,7 +878,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                       color: '#0B86C6',
                       margin: '20px 0 8px 0'
                     }}>
-                      Hello, {'{PARENT_NAME}'}
+                      Hello, {'{PARENT_FIRSTNAME}'}
                     </div>
                     
                     {/* Underline */}
@@ -875,8 +892,25 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     
                     {/* Lead text */}
                     <p style={{ fontSize: '18px', color: '#222', margin: '0 0 28px 0', lineHeight: '1.6' }}>
-                      We wanted to share important information about <strong>{'{STUDENT_NAME}'}</strong>'s participation in <strong>{'{TEAM_NAME}'}</strong>.
+                      Here's some information about <strong>{'{STUDENT_FIRSTNAME}'}</strong>'s participation in <strong>{'{TEAM_NAME}'}</strong>.
                     </p>
+                    
+                    <div style={{ height: '16px' }}></div>
+                    
+                    {/* Additional Information Box */}
+                    <div style={{
+                      borderRadius: '14px',
+                      border: '1px solid #e6eef5',
+                      backgroundColor: '#f8fcff',
+                      padding: '24px',
+                      fontSize: '18px',
+                      color: '#333',
+                      lineHeight: '1.6'
+                    }}>
+                      {additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
+                    </div>
+                    
+                    <div style={{ height: '16px' }}></div>
                     
                     {/* Team Details Image */}
                     <div style={{ textAlign: 'center', margin: '12px 0 24px 0' }}>
@@ -905,21 +939,6 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontWeight: 800, color: '#0B86C6', fontSize: '22px' }}>School:</span>
                       <span style={{ fontSize: '18px', color: '#111', textAlign: 'right' }}>{'{SCHOOL_NAME}'}</span>
-                    </div>
-                    
-                    <div style={{ height: '16px' }}></div>
-                    
-                    {/* Additional Information Box */}
-                    <div style={{
-                      borderRadius: '14px',
-                      border: '1px solid #e6eef5',
-                      backgroundColor: '#f8fcff',
-                      padding: '24px',
-                      fontSize: '18px',
-                      color: '#333',
-                      lineHeight: '1.6'
-                    }}>
-                      {additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
                     </div>
                     
                     <div style={{ height: '24px' }}></div>
@@ -983,9 +1002,12 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <h5 className="font-medium text-blue-900 mb-2">Available Database Variables</h5>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{PARENT_FIRSTNAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_FIRSTNAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{STUDENT_GRADE}"}</Badge>
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{TEAM_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SPORT}"}</Badge>
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{COACH_NAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_NAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">{"{SCHOOL_LOCATION}"}</Badge>
@@ -1030,10 +1052,10 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
-                  Paso 4: Redactar Mensaje SMS
+                  Step 4: Write SMS Message
                 </CardTitle>
                 <CardDescription>
-                  Escribe tu mensaje de texto (Los mensajes SMS están limitados a 160 caracteres por segmento)
+                  Write your text message (SMS messages are limited to 160 characters per segment)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1042,9 +1064,12 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <h5 className="font-medium text-green-900 mb-2">Available Database Variables</h5>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{PARENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{PARENT_FIRSTNAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{STUDENT_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{STUDENT_FIRSTNAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{STUDENT_GRADE}"}</Badge>
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{TEAM_NAME}"}</Badge>
+                    <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{SPORT}"}</Badge>
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{COACH_NAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{SCHOOL_NAME}"}</Badge>
                     <Badge variant="outline" className="bg-white text-green-700 border-green-300">{"{SCHOOL_LOCATION}"}</Badge>

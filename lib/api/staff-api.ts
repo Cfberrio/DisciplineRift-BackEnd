@@ -5,6 +5,9 @@ export interface Staff {
   name: string;
   email: string | null;
   phone: string | null;
+  role?: string | null;
+  firstname?: string;
+  lastname?: string;
 }
 
 export const staffApi = {
@@ -12,7 +15,7 @@ export const staffApi = {
     try {
       const { data, error } = await supabase
         .from("staff")
-        .select("id, name, email, phone")
+        .select("*")
         .order("name", { ascending: true });
 
       if (error) {
@@ -28,7 +31,7 @@ export const staffApi = {
   async getById(id: string): Promise<Staff> {
     const { data, error } = await supabase
       .from("staff")
-      .select("id, name, email, phone")
+      .select("*")
       .eq("id", id)
       .single();
 
@@ -44,7 +47,7 @@ export const staffApi = {
     const { data, error } = await supabase
       .from("staff")
       .insert([staff])
-      .select("id, name, email, phone")
+      .select("*")
       .single();
 
     if (error) {
@@ -60,7 +63,7 @@ export const staffApi = {
       .from("staff")
       .update(updates)
       .eq("id", id)
-      .select("id, name, email, phone")
+      .select("*")
       .single();
 
     if (error) {

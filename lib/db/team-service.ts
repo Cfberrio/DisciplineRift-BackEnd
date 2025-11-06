@@ -5,6 +5,7 @@ export interface Team {
   teamid: string
   schoolid: number
   name: string
+  sport?: string | null
   description: string
   price: number
   participants: number
@@ -17,6 +18,7 @@ export interface Team {
 export interface CreateTeamData {
   schoolid: number
   name: string
+  sport?: string | null
   description: string
   price: number
   participants: number
@@ -27,6 +29,7 @@ export interface CreateTeamData {
 export interface UpdateTeamData {
   schoolid?: number
   name?: string
+  sport?: string | null
   description?: string
   price?: number
   participants?: number
@@ -134,6 +137,7 @@ class TeamService {
       const insertData = {
         schoolid: Number(teamData.schoolid), // Make sure this is the correct schoolid
         name: teamData.name.trim(),
+        sport: teamData.sport?.trim() || null,
         description: teamData.description?.trim() || "",
         price: Number(teamData.price) || 0,
         participants: Number(teamData.participants) || 20,
@@ -172,10 +176,12 @@ class TeamService {
       const updateData: any = {}
       if (teamData.schoolid !== undefined) updateData.schoolid = Number(teamData.schoolid)
       if (teamData.name !== undefined) updateData.name = teamData.name.trim()
+      if (teamData.sport !== undefined) updateData.sport = teamData.sport?.trim() || null
       if (teamData.description !== undefined) updateData.description = teamData.description.trim()
       if (teamData.price !== undefined) updateData.price = Number(teamData.price)
       if (teamData.participants !== undefined) updateData.participants = Number(teamData.participants)
       if (teamData.isactive !== undefined) updateData.isactive = Boolean(teamData.isactive)
+      if (teamData.isongoing !== undefined) updateData.isongoing = Boolean(teamData.isongoing)
 
       console.log("[SERVER] Prepared update data:", JSON.stringify(updateData))
 

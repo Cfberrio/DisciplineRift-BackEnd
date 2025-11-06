@@ -62,7 +62,7 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
             url: response.url
           })
           
-          let errorMessage = `Error al obtener los padres del equipo (${response.status})`
+          let errorMessage = `Error fetching team parents (${response.status})`
           try {
             const errorData = await response.json()
             if (errorData.error) {
@@ -80,7 +80,7 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
         setParents(parentsData)
       } catch (err) {
         console.error("Error fetching parents:", err)
-        setError(err instanceof Error ? err.message : "Error desconocido")
+        setError(err instanceof Error ? err.message : "Unknown error")
         setParents([])
       } finally {
         setIsLoading(false)
@@ -90,7 +90,7 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
     fetchParents()
   }, [teamId])
 
-  // Filtrar padres por búsqueda
+  // Filter parents by search
   const filteredParents = parents.filter((parent) =>
     `${parent.firstname} ${parent.lastname}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     parent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -109,10 +109,10 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
 
   const handleSelectAll = () => {
     if (selectedParents.length === filteredParents.length) {
-      // Deseleccionar todos
+      // Deselect all
       onParentsChange([])
     } else {
-      // Seleccionar todos los padres filtrados
+      // Select all filtered parents
       onParentsChange(filteredParents.map(parent => parent.parentid))
     }
   }
@@ -172,7 +172,7 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
 
   return (
     <div className="space-y-2">
-      <Label>Seleccionar Padres</Label>
+      <Label>Select Parents</Label>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -200,7 +200,7 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
             </div>
           </div>
           
-          {/* Barra de búsqueda */}
+          {/* Search bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -247,7 +247,7 @@ export function ParentSelector({ teamId, selectedParents, onParentsChange }: Par
                         </div>
                       </div>
 
-                      {/* Mostrar estudiantes */}
+                      {/* Show students */}
                       <div className="mt-2">
                         <div className="text-xs text-muted-foreground mb-1">Students:</div>
                         <div className="flex flex-wrap gap-1">

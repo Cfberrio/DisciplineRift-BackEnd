@@ -37,12 +37,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerSupabaseClient()
 
-    // Obtener información del equipo, escuela y entrenador
+    // Get team, school and coach information
     const { data: teamData, error: teamError } = await supabase
       .from("team")
       .select(`
         teamid,
         name,
+        sport,
         description,
         price,
         school:schoolid (
@@ -62,14 +63,24 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (teamError || !teamData) {
-      console.error("[SERVER] Error fetching team data:", teamError)
+      console.error("[SERVER] Error fetching team data:", {
+        error: teamError,
+        message: teamError?.message,
+        details: teamError?.details,
+        hint: teamError?.hint,
+        code: teamError?.code
+      })
       return NextResponse.json(
-        { error: "Error al obtener datos del equipo" },
+        { 
+          error: "Error al obtener datos del equipo",
+          details: teamError?.message || "Unknown error",
+          hint: teamError?.hint
+        },
         { status: 500 }
       )
     }
 
-    // Obtener información de los padres y sus estudiantes usando enrollment como punto de entrada
+    // Get parents and their students information using enrollment as entry point
     const { data: enrollmentData, error: parentsError } = await supabase
       .from("enrollment")
       .select(`
@@ -119,7 +130,7 @@ export async function POST(request: NextRequest) {
       teamName: teamData.name
     })
 
-    // Verificar configuración de email
+    // Verify email configuration
     console.log("[SERVER] Verifying email configuration...")
     const emailVerification = await verifyEmailConfiguration()
     
@@ -135,18 +146,18 @@ export async function POST(request: NextRequest) {
 
     // Procesar y enviar emails
     const emailResults = []
-    const schoolName = teamData.school?.name || "Escuela"
-    const schoolLocation = teamData.school?.location || "Ubicación no especificada"
-    const coachName = teamData.session?.[0]?.staff?.name || "Entrenador"
+    const schoolName = teamData.school?.name || "School"
+    const schoolLocation = teamData.school?.location || "Location not specified"
+    const coachName = teamData.session?.[0]?.staff?.name || "Coach"
 
-    // Agrupar enrollments por padre (solo los padres seleccionados)
+    // Group enrollments by parent (only selected parents)
     const parentMap = new Map()
     
     enrollmentData.forEach((enrollment: any) => {
       const parent = enrollment.student.parent
       const student = enrollment.student
       
-      // Verificar que este padre esté en la lista de seleccionados
+      // Verify that this parent is in the selected list
       if (!parentIds.includes(parent.parentid)) {
         console.log("[SERVER] Skipping parent not in selection:", parent.parentid)
         return
@@ -178,8 +189,9 @@ export async function POST(request: NextRequest) {
           studentsCount: students.length
         })
         
-        // Obtener información de los estudiantes
+        // Get students information
         const studentNames = students.map((s: any) => `${s.firstname} ${s.lastname}`).join(", ")
+        const studentFirstNames = students.map((s: any) => s.firstname).join(", ")
         const studentGrades = students.map((s: any) => s.grade).join(", ")
         const emergencyContacts = students.map((s: any) => s.ecname).join(", ")
         const emergencyPhones = students.map((s: any) => s.ecphone).join(", ")
@@ -188,8 +200,11 @@ export async function POST(request: NextRequest) {
         // Reemplazar variables en el asunto y contenido usando datos reales de la BD
         const emailVariables = {
           PARENT_NAME: `${parent.firstname} ${parent.lastname}`,
+          PARENT_FIRSTNAME: parent.firstname,
           STUDENT_NAME: studentNames,
+          STUDENT_FIRSTNAME: studentFirstNames,
           TEAM_NAME: teamData.name,
+          SPORT: teamData.sport || '',
           SCHOOL_NAME: schoolName,
           SCHOOL_LOCATION: schoolLocation,
           COACH_NAME: coachName,
@@ -206,10 +221,10 @@ export async function POST(request: NextRequest) {
         const personalizedSubject = replaceEmailVariables(subject, emailVariables)
         const personalizedContent = replaceEmailVariables(content, emailVariables)
 
-        // Preparar contenido del email
+        // Prepare email content
         const emailHtml = isHtml ? personalizedContent : `
           <!DOCTYPE html>
-          <html lang="es">
+          <html lang="en">
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -258,20 +273,20 @@ export async function POST(request: NextRequest) {
           <body>
             <div class="header">
               <h1>${schoolName}</h1>
-              <p>Sistema de Comunicación de Equipos</p>
+              <p>Team Communication System</p>
             </div>
             <div class="content">
               ${personalizedContent}
             </div>
             <div class="footer">
-              <p>Este email fue enviado desde el sistema de gestión de ${schoolName}</p>
-              <p>Si tienes alguna pregunta, contacta directamente con el entrenador ${coachName}</p>
+              <p>This email was sent from ${schoolName} management system</p>
+              <p>If you have any questions, contact coach ${coachName} directly</p>
             </div>
           </body>
           </html>
         `
 
-        // Enviar el email usando el servicio mejorado
+        // Send the email using the improved service
         const emailResult = await sendEmail({
           to: parent.email,
           subject: personalizedSubject,
@@ -301,12 +316,12 @@ export async function POST(request: NextRequest) {
           parentId: parent.parentid,
           email: parent.email,
           success: false,
-          error: emailError instanceof Error ? emailError.message : "Error desconocido"
+          error: emailError instanceof Error ? emailError.message : "Unknown error"
         })
       }
     }
 
-    // Calcular estadísticas
+    // Calculate statistics
     const successCount = emailResults.filter(r => r.success).length
     const failureCount = emailResults.filter(r => !r.success).length
 
@@ -322,7 +337,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Campaña de email completada para ${parentIds.length} padres seleccionados del equipo ${teamData.name}`,
+      message: `Email campaign completed for ${parentIds.length} selected parents from team ${teamData.name}`,
       statistics: {
         total: emailResults.length,
         success: successCount,

@@ -38,20 +38,20 @@ interface WeekdayTeamSelectorProps {
 }
 
 const WEEKDAYS_MAP: Record<string, string> = {
-  'monday': 'Lunes',
-  'tuesday': 'Martes',
-  'wednesday': 'Miércoles',
-  'thursday': 'Jueves',
-  'friday': 'Viernes',
-  'saturday': 'Sábado',
-  'sunday': 'Domingo',
-  'mon': 'Lunes',
-  'tue': 'Martes',
-  'wed': 'Miércoles',
-  'thu': 'Jueves',
-  'fri': 'Viernes',
-  'sat': 'Sábado',
-  'sun': 'Domingo'
+  'monday': 'Monday',
+  'tuesday': 'Tuesday',
+  'wednesday': 'Wednesday',
+  'thursday': 'Thursday',
+  'friday': 'Friday',
+  'saturday': 'Saturday',
+  'sunday': 'Sunday',
+  'mon': 'Monday',
+  'tue': 'Tuesday',
+  'wed': 'Wednesday',
+  'thu': 'Thursday',
+  'fri': 'Friday',
+  'sat': 'Saturday',
+  'sun': 'Sunday'
 }
 
 const WEEKDAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -71,7 +71,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
         const response = await fetch("/api/teams?include=sessions")
         
         if (!response.ok) {
-          throw new Error("Error al obtener los equipos")
+          throw new Error("Error fetching teams")
         }
         
         const allTeams: Team[] = await response.json()
@@ -114,8 +114,8 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
               }
             })
           } else {
-            // Teams without sessions go to "Sin día asignado"
-            const unassignedKey = "Sin día asignado"
+            // Teams without sessions go to "No day assigned"
+            const unassignedKey = "No day assigned"
             if (!groupMap.has(unassignedKey)) {
               groupMap.set(unassignedKey, [])
             }
@@ -138,7 +138,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
           }
         })
         
-        // Add remaining groups (like "Sin día asignado")
+        // Add remaining groups (like "No day assigned")
         groupMap.forEach((teams, weekday) => {
           groups.push({ weekday, teams })
         })
@@ -147,7 +147,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
         setError(null)
       } catch (err) {
         console.error("Error fetching teams:", err)
-        setError(err instanceof Error ? err.message : "Error desconocido")
+        setError(err instanceof Error ? err.message : "Unknown error")
       } finally {
         setIsLoading(false)
       }
@@ -167,7 +167,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Label>Seleccionar Equipo por Día de la Semana</Label>
+        <Label>Select Team by Day of Week</Label>
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-32 w-full" />
@@ -178,7 +178,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
   if (error) {
     return (
       <div className="space-y-2">
-        <Label>Seleccionar Equipo por Día de la Semana</Label>
+        <Label>Select Team by Day of Week</Label>
         <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
           Error: {error}
         </div>
@@ -189,9 +189,9 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
   if (weekdayGroups.length === 0) {
     return (
       <div className="space-y-2">
-        <Label>Seleccionar Equipo por Día de la Semana</Label>
+        <Label>Select Team by Day of Week</Label>
         <p className="text-sm text-muted-foreground">
-          No hay equipos activos disponibles para mensajería.
+          No active teams available for messaging.
         </p>
       </div>
     )
@@ -201,10 +201,10 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
     <div className="space-y-4">
       <Label className="text-base font-semibold flex items-center gap-2">
         <Calendar className="w-5 h-5" />
-        Seleccionar Equipo por Día de la Semana
+        Select Team by Day of Week
       </Label>
       <p className="text-sm text-muted-foreground">
-        Los equipos están agrupados por los días en que tienen sesiones programadas.
+        Teams are grouped by the days they have scheduled sessions.
       </p>
 
       <div className="space-y-3">
@@ -215,7 +215,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   {group.weekday}
                   <Badge variant="secondary" className="ml-2">
-                    {group.teams.length} {group.teams.length === 1 ? 'equipo' : 'equipos'}
+                    {group.teams.length} {group.teams.length === 1 ? 'team' : 'teams'}
                   </Badge>
                 </h3>
               </div>
@@ -241,7 +241,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
                       )}
                       {team.participants > 0 && (
                         <Badge variant="outline" className="w-fit text-xs">
-                          {team.participants} participantes
+                          {team.participants} participants
                         </Badge>
                       )}
                     </div>
@@ -257,7 +257,7 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span className="text-sm text-green-700 font-medium">
-            Equipo seleccionado - Continúa al siguiente paso
+            Team selected - Continue to next step
           </span>
         </div>
       )}
