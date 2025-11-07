@@ -182,7 +182,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // FIX: Eliminada dependencia [state] para prevenir loop infinito
 
   return {
     ...state,

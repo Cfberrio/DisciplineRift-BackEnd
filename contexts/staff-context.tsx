@@ -137,7 +137,8 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchStaff();
-  }, [fetchStaff]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // FIX: Sin dependencias para prevenir loops infinitos - fetchStaff se mantiene estable
 
   return (
     <StaffContext.Provider

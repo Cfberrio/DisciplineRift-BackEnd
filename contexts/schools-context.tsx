@@ -156,11 +156,13 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
 
   const refreshData = useCallback(async () => {
     await fetchSchools();
-  }, [fetchSchools]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // FIX: Sin dependencias para prevenir loops infinitos
 
   useEffect(() => {
     fetchSchools();
-  }, [fetchSchools]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // FIX: Sin dependencias para prevenir loops infinitos - fetchSchools se mantiene estable
 
   return (
     <SchoolsContext.Provider

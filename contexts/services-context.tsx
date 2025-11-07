@@ -579,11 +579,13 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
 
   const refreshServices = useCallback(async () => {
     await fetchServices();
-  }, [fetchServices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // FIX: Sin dependencias para prevenir loops infinitos
 
   const refreshData = useCallback(async () => {
     await fetchServices();
-  }, [fetchServices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // FIX: Sin dependencias para prevenir loops infinitos
 
   useEffect(() => {
     fetchServices();
