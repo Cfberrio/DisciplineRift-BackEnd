@@ -58,6 +58,23 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
     ? sampleTemplates.find(t => t.id === selectedTemplate)
     : null
 
+  // Function to convert line breaks to HTML
+  const formatTextToHtml = (text: string): string => {
+    if (!text) return ''
+    
+    // Split by double line breaks to create paragraphs
+    const paragraphs = text.split(/\n\n+/)
+    
+    return paragraphs
+      .map(paragraph => {
+        // Replace single line breaks with <br> within paragraphs
+        const formattedParagraph = paragraph.trim().replace(/\n/g, '<br>')
+        return formattedParagraph ? `<p style="margin: 0 0 12px 0;">${formattedParagraph}</p>` : ''
+      })
+      .filter(p => p)
+      .join('')
+  }
+
   const handleTemplateChange = (value: string) => {
     if (value === "html") {
       setIsHtmlMode(true)
@@ -322,7 +339,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <div class="spacer-16">&nbsp;</div>
 
                   <div class="box-note">
-                    ${additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
+                    ${formatTextToHtml(additionalInfo) || '<p style="margin: 0;">If you have any questions, please do not hesitate to contact us.</p>'}
                   </div>
 
                   <div class="spacer-16">&nbsp;</div>
@@ -898,17 +915,20 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                     <div style={{ height: '16px' }}></div>
                     
                     {/* Additional Information Box */}
-                    <div style={{
-                      borderRadius: '14px',
-                      border: '1px solid #e6eef5',
-                      backgroundColor: '#f8fcff',
-                      padding: '24px',
-                      fontSize: '18px',
-                      color: '#333',
-                      lineHeight: '1.6'
-                    }}>
-                      {additionalInfo || 'If you have any questions, please do not hesitate to contact us.'}
-                    </div>
+                    <div 
+                      style={{
+                        borderRadius: '14px',
+                        border: '1px solid #e6eef5',
+                        backgroundColor: '#f8fcff',
+                        padding: '24px',
+                        fontSize: '18px',
+                        color: '#333',
+                        lineHeight: '1.6'
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: formatTextToHtml(additionalInfo) || '<p style="margin: 0;">If you have any questions, please do not hesitate to contact us.</p>'
+                      }}
+                    />
                     
                     <div style={{ height: '16px' }}></div>
                     
