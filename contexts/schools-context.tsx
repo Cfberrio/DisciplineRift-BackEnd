@@ -160,6 +160,15 @@ export function SchoolsProvider({ children }: { children: React.ReactNode }) {
   }, []); // FIX: Sin dependencias para prevenir loops infinitos
 
   useEffect(() => {
+    // NO ejecutar en páginas de auth
+    if (typeof window !== 'undefined' && 
+        (window.location.pathname === '/login' || 
+         window.location.pathname === '/unauthorized')) {
+      console.log("SchoolsContext: Skipping fetch on auth page")
+      setLoading(false)
+      return
+    }
+    
     fetchSchools();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // FIX: Sin dependencias para prevenir loops infinitos - fetchSchools se mantiene estable

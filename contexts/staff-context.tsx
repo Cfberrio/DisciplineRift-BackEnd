@@ -136,6 +136,15 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
+    // NO ejecutar en páginas de auth
+    if (typeof window !== 'undefined' && 
+        (window.location.pathname === '/login' || 
+         window.location.pathname === '/unauthorized')) {
+      console.log("StaffContext: Skipping fetch on auth page")
+      setLoading(false)
+      return
+    }
+    
     fetchStaff();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // FIX: Sin dependencias para prevenir loops infinitos - fetchStaff se mantiene estable
