@@ -66,7 +66,7 @@ export function useSessions(teamId: string | null) {
     queryKey: ["sessions", teamId],
     queryFn: () => (teamId ? fetchSessions(teamId) : Promise.resolve([])),
     enabled: !!teamId,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 60 * 1000, // 60 seconds
     refetchOnMount: false, // Only refetch if stale
     refetchOnWindowFocus: false,
   })
@@ -101,16 +101,20 @@ export function useCreateSession() {
       return data
     },
     onSuccess: (data) => {
-      // Refetch active queries immediately to update UI
-      queryClient.invalidateQueries({ 
-        queryKey: ["sessions", data.teamid],
-        refetchType: "active"
-      })
-      // Also invalidate roster data if viewing it
-      queryClient.invalidateQueries({ 
-        queryKey: ["roster", data.teamid],
-        refetchType: "active"
-      })
+      // Delay para permitir que el diálogo se cierre primero
+      setTimeout(() => {
+        // Refetch active queries immediately to update UI
+        queryClient.invalidateQueries({ 
+          queryKey: ["sessions", data.teamid],
+          refetchType: "active"
+        })
+        // Also invalidate roster data if viewing it
+        queryClient.invalidateQueries({ 
+          queryKey: ["roster", data.teamid],
+          refetchType: "active"
+        })
+      }, 100)
+      
       toast({
         title: "Success",
         description: "Session created successfully",
@@ -159,14 +163,18 @@ export function useUpdateSession() {
       return data
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ 
-        queryKey: ["sessions", data.teamid],
-        refetchType: "active"
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: ["roster", data.teamid],
-        refetchType: "active"
-      })
+      // Delay para permitir que el diálogo se cierre primero
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: ["sessions", data.teamid],
+          refetchType: "active"
+        })
+        queryClient.invalidateQueries({ 
+          queryKey: ["roster", data.teamid],
+          refetchType: "active"
+        })
+      }, 100)
+      
       toast({
         title: "Success",
         description: "Session updated successfully",

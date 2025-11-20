@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useTeams, useDeleteTeam, type TeamFilters } from "@/hooks/use-teams"
+import { useTeams, useDeleteTeam, useDuplicateTeam, type TeamFilters } from "@/hooks/use-teams"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, MoreHorizontal, Pencil, Trash2, Users, Search, Settings } from "lucide-react"
+import { Plus, MoreHorizontal, Pencil, Trash2, Users, Search, Settings, Copy } from "lucide-react"
 import { TeamDialog } from "./team-dialog"
 import { useSchoolsWithRefresh } from "@/hooks/use-schools-with-refresh"
 import { useDebouncedCallback } from "@/hooks/use-debounce"
@@ -56,6 +56,7 @@ export function TeamsTable() {
   const { data, isLoading } = useTeams(filters, page)
   const { schools } = useSchoolsWithRefresh()
   const deleteTeam = useDeleteTeam()
+  const duplicateTeam = useDuplicateTeam()
 
   // Debounced search
   const debouncedSearch = useDebouncedCallback((value: string) => {
@@ -81,6 +82,17 @@ export function TeamsTable() {
     if (!deletingTeam) return
     await deleteTeam.mutateAsync(deletingTeam)
     setDeletingTeam(null)
+  }
+
+  const handleDuplicate = async (teamId: string, teamName: string) => {
+    try {
+      const newTeam = await duplicateTeam.mutateAsync(teamId)
+      // Abrir el diálogo de edición con el nuevo team
+      setEditingTeam(newTeam.teamid)
+      setDialogOpen(true)
+    } catch (error) {
+      // Error handled by mutation hook
+    }
   }
 
   return (
@@ -242,6 +254,13 @@ export function TeamsTable() {
                         >
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit Team
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDuplicate(team.teamid, team.name)}
+                          disabled={duplicateTeam.isPending}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate Team
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDeletingTeam(team.teamid)}

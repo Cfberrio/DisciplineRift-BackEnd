@@ -122,7 +122,8 @@ export function SessionDialog({
         coachid: "none",
       })
     }
-  }, [open, session, isEdit, form])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, session?.sessionid]) // Solo depender de open, isEdit y session ID
 
   const onSubmit = async (values: SessionFormValues) => {
     if (!teamId) return
@@ -148,8 +149,10 @@ export function SessionDialog({
         await createSession.mutateAsync(payload)
       }
 
+      // Cerrar primero para detener el query activo
       onOpenChange(false)
-      form.reset()
+      // Resetear después con un pequeño delay para evitar warnings
+      setTimeout(() => form.reset(), 0)
     } catch (error) {
       // Error handled by mutation hooks
     }

@@ -9,12 +9,17 @@ export function RefreshDetector() {
   const hasDetectedRefresh = useRef(false)
 
   useEffect(() => {
+    // NO ejecutar en páginas de auth
+    if (window.location.pathname === '/login' || 
+        window.location.pathname === '/unauthorized') {
+      console.log("🔒 RefreshDetector desactivado en página de auth")
+      return
+    }
+
     const handleRefreshDetection = async () => {
       if (hasDetectedRefresh.current) return
       
-      // More aggressive refresh detection
       const isRefresh = () => {
-        // Check multiple indicators of refresh
         if (performance.navigation && performance.navigation.type === performance.navigation.TYPE_RELOAD) {
           return true
         }
@@ -24,11 +29,7 @@ export function RefreshDetector() {
           return navEntry.type === "reload"
         }
         
-        // Check if we have a session but the page was just loaded
-        const hasSession = document.cookie.includes('sb-') || localStorage.getItem('supabase')
-        const justLoaded = performance.now() < 1000 // Page loaded less than 1 second ago
-        
-        return hasSession && justLoaded
+        return false
       }
       
       const isRefreshDetected = isRefresh()

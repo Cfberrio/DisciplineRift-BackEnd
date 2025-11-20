@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useSchoolsWithRefresh } from "@/hooks/use-schools-with-refresh"
-import { useCreateTeam, useUpdateTeam, useTeams } from "@/hooks/use-teams"
+import { useCreateTeam, useUpdateTeam, useTeam } from "@/hooks/use-teams"
 import { Loader2 } from "lucide-react"
 
 const teamSchema = z.object({
@@ -59,10 +59,10 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
   const { schools } = useSchoolsWithRefresh()
   const createTeam = useCreateTeam()
   const updateTeam = useUpdateTeam()
-  const { data: teamsData } = useTeams({}, 1)
-
   const isEdit = !!teamId
-  const team = teamsData?.teams.find((t) => t.teamid === teamId)
+  
+  // Fetch específico del team al editar (más eficiente)
+  const { data: team, isLoading: teamLoading } = useTeam(teamId)
 
   const form = useForm<TeamFormValues>({
     resolver: zodResolver(teamSchema),
@@ -103,7 +103,8 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
         schoolid: schools?.[0]?.schoolid || 0,
       })
     }
-  }, [open, team, isEdit, form, schools])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, teamId, team]) // Incluir team para actualizar cuando se cargue
 
   const onSubmit = async (values: TeamFormValues) => {
     try {
@@ -112,8 +113,10 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
       } else {
         await createTeam.mutateAsync(values)
       }
+      // Cerrar primero para detener el query activo
       onOpenChange(false)
-      form.reset()
+      // Resetear después con un pequeño delay para evitar warnings
+      setTimeout(() => form.reset(), 0)
     } catch (error) {
       // Error handled by mutation hooks
     }

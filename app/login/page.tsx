@@ -15,7 +15,8 @@ export default function LoginPage() {
     if (!loading && user) {
       router.replace("/")
     }
-  }, [user, loading, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading]) // Remover router de dependencias
 
   if (loading) {
     return (

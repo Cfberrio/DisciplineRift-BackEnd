@@ -149,6 +149,30 @@ async function fetchTeams(
   }
 }
 
+// Fetch single team by ID
+async function fetchTeamById(teamId: string) {
+  const { data, error } = await supabase
+    .from("team")
+    .select(
+      `
+      *,
+      school:schoolid (
+        schoolid,
+        name,
+        location
+      )
+    `
+    )
+    .eq("teamid", teamId)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
 // Fetch team statistics
 async function fetchTeamStats() {
   const { data: teams, error: teamsError } = await supabase
@@ -177,12 +201,28 @@ async function fetchTeamStats() {
 }
 
 // Hooks
-export function useTeams(filters: TeamFilters = {}, page: number = 1) {
+export function useTeams(
+  filters: TeamFilters = {}, 
+  page: number = 1,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ["teams", JSON.stringify(filters), page],
     queryFn: () => fetchTeams(filters, page, 20),
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 60 * 1000, // 60 seconds
     refetchOnMount: false, // Only refetch if stale
+    refetchOnWindowFocus: false,
+    enabled: options?.enabled ?? true, // Por defecto habilitado
+  })
+}
+
+export function useTeam(teamId: string | null) {
+  return useQuery({
+    queryKey: ["team", teamId],
+    queryFn: () => (teamId ? fetchTeamById(teamId) : Promise.resolve(null)),
+    enabled: !!teamId,
+    staleTime: 60 * 1000, // 60 seconds
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   })
 }
@@ -226,15 +266,23 @@ export function useCreateTeam() {
       return data
     },
     onSuccess: () => {
-      // Use refetch type to avoid loops
-      queryClient.invalidateQueries({ 
-        queryKey: ["teams"],
-        refetchType: "active"
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: ["team-stats"],
-        refetchType: "active"
-      })
+      // Delay para permitir que el diálogo se cierre primero
+      setTimeout(() => {
+        // Use refetch type to avoid loops
+        queryClient.invalidateQueries({ 
+          queryKey: ["teams"],
+          refetchType: "active"
+        })
+        queryClient.invalidateQueries({ 
+          queryKey: ["team-stats"],
+          refetchType: "active"
+        })
+        queryClient.invalidateQueries({ 
+          queryKey: ["team"],
+          refetchType: "active"
+        })
+      }, 100)
+      
       toast({
         title: "Success",
         description: "Team created successfully",
@@ -284,15 +332,24 @@ export function useUpdateTeam() {
       return data
     },
     onSuccess: () => {
-      // Use refetch type to avoid loops
-      queryClient.invalidateQueries({ 
-        queryKey: ["teams"],
-        refetchType: "active"
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: ["team-stats"],
-        refetchType: "active"
-      })
+      // Delay para permitir que el diálogo se cierre primero
+      setTimeout(() => {
+        // Use refetch type to avoid loops
+        queryClient.invalidateQueries({ 
+          queryKey: ["teams"],
+          refetchType: "active"
+        })
+        queryClient.invalidateQueries({ 
+          queryKey: ["team-stats"],
+          refetchType: "active"
+        })
+        // Invalidar el team específico actualizado
+        queryClient.invalidateQueries({ 
+          queryKey: ["team"],
+          refetchType: "active"
+        })
+      }, 100)
+      
       toast({
         title: "Success",
         description: "Team updated successfully",
@@ -366,6 +423,115 @@ export function useDeleteTeam() {
         title: "Success",
         description: "Team deleted successfully",
       })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
+}
+
+// Función para duplicar un team con sus sessions
+async function duplicateTeamWithSessions(teamId: string) {
+  // 1. Obtener el team original
+  const { data: originalTeam, error: teamError } = await supabase
+    .from("team")
+    .select("*")
+    .eq("teamid", teamId)
+    .single()
+
+  if (teamError || !originalTeam) {
+    throw new Error("Failed to fetch original team")
+  }
+
+  // 2. Crear el nuevo team con nombre_duplicate
+  const newTeamData = {
+    name: `${originalTeam.name}_duplicate`,
+    sport: originalTeam.sport,
+    description: originalTeam.description,
+    price: originalTeam.price,
+    participants: originalTeam.participants,
+    isactive: originalTeam.isactive,
+    isongoing: originalTeam.isongoing,
+    schoolid: originalTeam.schoolid,
+  }
+
+  const { data: newTeam, error: createError } = await supabase
+    .from("team")
+    .insert(newTeamData)
+    .select()
+    .single()
+
+  if (createError || !newTeam) {
+    throw new Error("Failed to create duplicate team")
+  }
+
+  // 3. Obtener todas las sessions del team original
+  const { data: originalSessions, error: sessionsError } = await supabase
+    .from("session")
+    .select("*")
+    .eq("teamid", teamId)
+
+  if (sessionsError) {
+    throw new Error("Failed to fetch original sessions")
+  }
+
+  // 4. Duplicar sessions si existen
+  if (originalSessions && originalSessions.length > 0) {
+    const newSessions = originalSessions.map((session) => ({
+      teamid: newTeam.teamid,
+      daysofweek: session.daysofweek,
+      starttime: session.starttime,
+      endtime: session.endtime,
+      startdate: session.startdate,
+      enddate: session.enddate,
+      coachid: session.coachid,
+      repeat: session.repeat,
+    }))
+
+    const { error: insertSessionsError } = await supabase
+      .from("session")
+      .insert(newSessions)
+
+    if (insertSessionsError) {
+      throw new Error("Failed to duplicate sessions")
+    }
+  }
+
+  return newTeam
+}
+
+// Hook para duplicar team
+export function useDuplicateTeam() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async (teamId: string) => {
+      return await duplicateTeamWithSessions(teamId)
+    },
+    onSuccess: (newTeam) => {
+      // Delay para permitir que el UI se actualice primero
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: ["teams"],
+          refetchType: "active"
+        })
+        queryClient.invalidateQueries({ 
+          queryKey: ["team-stats"],
+          refetchType: "active"
+        })
+      }, 100)
+      
+      toast({
+        title: "Success",
+        description: `Team duplicated as "${newTeam.name}"`,
+      })
+      
+      return newTeam
     },
     onError: (error: Error) => {
       toast({
