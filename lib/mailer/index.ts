@@ -13,8 +13,6 @@ export {
   sendNewsletterEmail,
   sendBatchNewsletters,
   verifyNewsletterEmailConfig,
-  generateUnsubscribeToken,
-  verifyUnsubscribeToken,
 } from './newsletter-mailer'
 
 export type {
@@ -22,5 +20,10 @@ export type {
   BatchSendOptions,
   BatchSendResult,
 } from './newsletter-mailer'
+
+export {
+  signUnsubToken,
+  verifyUnsubToken,
+} from './unsub'
 
 

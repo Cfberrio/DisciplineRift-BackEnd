@@ -1,13 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
-import { verifyUnsubscribeToken } from "@/lib/mailer/newsletter-mailer"
+import { createServiceSupabaseClient } from "@/lib/supabase/server"
+import { verifyUnsubToken } from "@/lib/mailer/unsub"
 
-export async function GET(request: NextRequest) {
+type RequestSource = "GET" | "POST"
+
+async function processUnsubscribeRequest(token: string | null, source: RequestSource) {
+  const requestTime = new Date().toISOString()
+  console.log(`[UNSUBSCRIBE] ========================================`)
+  console.log(`[UNSUBSCRIBE] Received ${source} unsubscribe request at ${requestTime}`)
+  console.log(`[UNSUBSCRIBE] Token received: ${token ? token.substring(0, 20) + '...' : 'NONE'}`)
+
   try {
-    const searchParams = request.nextUrl.searchParams
-    const token = searchParams.get('token')
-
     if (!token) {
+      console.error('[UNSUBSCRIBE] ✗ No token provided in request')
+
       return new NextResponse(
         `
         <!DOCTYPE html>
@@ -61,10 +67,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verify and decode token
-    const { email, valid } = verifyUnsubscribeToken(token)
+    console.log('[UNSUBSCRIBE] Verifying and decoding token...')
+    const { email, valid } = verifyUnsubToken(token)
+    
+    console.log(`[UNSUBSCRIBE] Token validation result: ${valid ? 'VALID' : 'INVALID'}`)
+    console.log(`[UNSUBSCRIBE] Email extracted from token: ${email || 'NONE'}`)
 
     if (!valid || !email) {
+      console.error('[UNSUBSCRIBE] ✗ Token validation failed')
+
       return new NextResponse(
         `
         <!DOCTYPE html>
@@ -118,15 +129,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Delete from Newsletter table
-    const supabase = createServerSupabaseClient()
-    const { error: deleteError } = await supabase
+    console.log(`[UNSUBSCRIBE] Attempting to delete email from Newsletter table: ${email}`)
+    console.log('[UNSUBSCRIBE] Connecting to Supabase with service role client...')
+    
+    const supabase = createServiceSupabaseClient()
+    
+    console.log(`[UNSUBSCRIBE] Executing DELETE query for email: ${email}`)
+    const { error: deleteError, count } = await supabase
       .from('Newsletter')
-      .delete()
-      .eq('email', email)
+      .delete({ count: 'exact' })
+      .ilike('email', email)
 
     if (deleteError) {
-      console.error("Error deleting subscriber:", deleteError)
+      console.error("[UNSUBSCRIBE] ✗ Database error while deleting:")
+      console.error(`[UNSUBSCRIBE] Error code: ${deleteError.code}`)
+      console.error(`[UNSUBSCRIBE] Error message: ${deleteError.message}`)
+      console.error(`[UNSUBSCRIBE] Error details:`, deleteError)
       return new NextResponse(
         `
         <!DOCTYPE html>
@@ -180,9 +198,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log(`Successfully unsubscribed: ${email}`)
+    console.log(`[UNSUBSCRIBE] ✓ DELETE query executed successfully`)
+    console.log(`[UNSUBSCRIBE] Rows affected: ${count !== null ? count : 'unknown'}`)
+    console.log(`[UNSUBSCRIBE] ✓ Successfully unsubscribed: ${email}`)
+    console.log(`[UNSUBSCRIBE] Email ${email} has been removed from Newsletter table`)
+    console.log(`[UNSUBSCRIBE] Request source: ${source}`)
+    console.log(`[UNSUBSCRIBE] ========================================`)
 
-    // Return success page
+    if (source === "POST") {
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      })
+    }
+
     return new NextResponse(
       `
       <!DOCTYPE html>
@@ -241,10 +272,17 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'text/html',
         },
       }
-    )
+      )
 
   } catch (error) {
-    console.error("Error in unsubscribe handler:", error)
+    console.error("[UNSUBSCRIBE] ✗ Unexpected error in unsubscribe handler:")
+    console.error("[UNSUBSCRIBE] Error:", error)
+    console.error(`[UNSUBSCRIBE] Error type: ${error instanceof Error ? error.constructor.name : typeof error}`)
+    if (error instanceof Error) {
+      console.error(`[UNSUBSCRIBE] Error message: ${error.message}`)
+      console.error(`[UNSUBSCRIBE] Error stack:`, error.stack)
+    }
+    console.log(`[UNSUBSCRIBE] ========================================`)
     return new NextResponse(
       `
       <!DOCTYPE html>
@@ -299,4 +337,41 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const token = searchParams.get('token')
+  return processUnsubscribeRequest(token, "GET")
+}
 
+export async function POST(request: NextRequest) {
+  console.log('[UNSUBSCRIBE] POST request received with headers:', {
+    'list-unsubscribe-post': request.headers.get('list-unsubscribe-post'),
+    'user-agent': request.headers.get('user-agent'),
+  })
+
+  let token = request.nextUrl.searchParams.get('token')
+
+  if (!token) {
+    // Attempt to parse JSON body
+    const contentType = request.headers.get('content-type') || ''
+    try {
+      if (contentType.includes('application/json')) {
+        const body = await request.json()
+        token = body?.token ?? body?.Token ?? body?.unsubscribeToken ?? null
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const formData = await request.formData()
+        token = (formData.get('token') || formData.get('Token') || formData.get('unsubscribeToken')) as string | null
+      } else {
+        const rawText = (await request.text()).trim()
+        if (rawText.includes('=')) {
+          const params = new URLSearchParams(rawText)
+          token = params.get('token') || params.get('Token') || params.get('unsubscribeToken')
+        }
+      }
+    } catch (error) {
+      console.warn('[UNSUBSCRIBE] Warning: Failed to parse POST body for token', error)
+    }
+  }
+
+  return processUnsubscribeRequest(token, "POST")
+}
