@@ -214,65 +214,11 @@ async function processUnsubscribeRequest(token: string | null, source: RequestSo
       })
     }
 
-    return new NextResponse(
-      `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Unsubscribed Successfully</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-          .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 500px;
-          }
-          h1 {
-            color: #10b981;
-            margin-bottom: 20px;
-          }
-          p {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 15px;
-          }
-          .email {
-            font-weight: bold;
-            color: #333;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>✓ Successfully Unsubscribed</h1>
-          <p>You have been successfully unsubscribed from our newsletter.</p>
-          <p class="email">${email}</p>
-          <p>You will no longer receive emails from us.</p>
-          <p>If this was a mistake, you can resubscribe at any time through our website.</p>
-        </div>
-      </body>
-      </html>
-      `,
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      }
-      )
+    // Redirect to confirmation page for GET requests
+    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://www.disciplinerift.com'
+    const redirectUrl = `${baseUrl}/unsubscribe-success?email=${encodeURIComponent(email)}`
+    
+    return NextResponse.redirect(redirectUrl, 302)
 
   } catch (error) {
     console.error("[UNSUBSCRIBE] ✗ Unexpected error in unsubscribe handler:")
