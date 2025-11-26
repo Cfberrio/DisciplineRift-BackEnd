@@ -11,6 +11,39 @@ function maskEmail(email: string) {
   return `${localPart[0]}***${localPart.slice(-1)}@${domain}`
 }
 
+function resolveAppBaseUrl() {
+  const fallback = 'https://disciplinerift.com'
+  const raw =
+    (process.env.APP_BASE_URL ||
+      process.env.UNSUBSCRIBE_URL_BASE ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      fallback).trim()
+
+  if (!raw) {
+    return fallback
+  }
+
+  const withoutTrailingSlash = raw.replace(/\/+$/, '')
+  const isLocalhost =
+    withoutTrailingSlash.startsWith('http://localhost') ||
+    withoutTrailingSlash.startsWith('http://127.') ||
+    withoutTrailingSlash.startsWith('http://192.168.')
+
+  if (isLocalhost) {
+    return withoutTrailingSlash
+  }
+
+  if (withoutTrailingSlash.startsWith('http://')) {
+    return `https://${withoutTrailingSlash.slice(7)}`
+  }
+
+  if (withoutTrailingSlash.startsWith('https://')) {
+    return withoutTrailingSlash
+  }
+
+  return `https://${withoutTrailingSlash.replace(/^\/+/, '')}`
+}
+
 export interface NewsletterEmailOptions {
   to: string
   subject: string
@@ -58,11 +91,11 @@ export async function sendNewsletterEmail(
   try {
     const transporter = createNewsletterTransporter(options.provider)
     
-    // Use UNSUBSCRIBE_URL_BASE if provided, otherwise fallback to NEXT_PUBLIC_APP_URL
-    const baseUrl = process.env.APP_BASE_URL || process.env.UNSUBSCRIBE_URL_BASE || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const unsubscribeUrl = `${baseUrl}/api/email-marketing/unsubscribe?token=${options.unsubscribeToken}`
-    const unsubscribeMailto = `mailto:unsubscribe@disciplinerift.com?subject=unsubscribe`
-    const viewInBrowserUrl = `${baseUrl}/newsletter/view?token=${options.unsubscribeToken}`
+    const baseUrl = resolveAppBaseUrl()
+    const encodedToken = encodeURIComponent(options.unsubscribeToken)
+    const unsubscribeUrl = `${baseUrl}/api/email-marketing/unsubscribe?token=${encodedToken}`
+    const unsubscribeMailto = 'mailto:unsubscribe@disciplinerift.com?subject=unsubscribe'
+    const viewInBrowserUrl = `${baseUrl}/newsletter/view?token=${encodedToken}`
     
     // Log placeholder replacement for debugging
     const hasUnsubscribePlaceholder = options.html.includes('{UNSUBSCRIBE_URL}')
@@ -120,7 +153,8 @@ export async function sendNewsletterEmail(
       html: emailHtml,
       text: plainText,
       headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        // Gmail RFC 8058 requiere declarar canal mailto + HTTPS One-Click
+        'List-Unsubscribe': `<${unsubscribeMailto}>, <${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         'List-ID': 'Newsletter.DisciplineRift',
         'Reply-To': options.fromEmail,

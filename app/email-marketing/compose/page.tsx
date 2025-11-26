@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Send, TestTube, Eye, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 interface SendResult {
@@ -28,11 +29,11 @@ export default function ComposeNewsletterPage() {
   const [subject, setSubject] = useState('')
   const [html, setHtml] = useState('')
   const [textAlt, setTextAlt] = useState('')
+  const [provider, setProvider] = useState<'gmail' | 'relay' | 'marketing'>('relay')
   
   // Hardcoded values
   const fromName = 'DisciplineRift'
-  const fromEmail = 'info@disciplinerift.com'
-  const provider: 'relay' = 'relay'
+  const fromEmail = 'luis@disciplinerift.com'
   
   // UI state
   const [showPreview, setShowPreview] = useState(false)
@@ -79,6 +80,13 @@ export default function ComposeNewsletterPage() {
     setTestResult(null)
 
     try {
+      console.log('[NEWSLETTER] Sending test emails...', {
+        emails,
+        subject,
+        provider,
+        htmlLength: html.length,
+      })
+
       const response = await fetch('/api/email-marketing/test', {
         method: 'POST',
         headers: {
@@ -95,7 +103,34 @@ export default function ComposeNewsletterPage() {
         }),
       })
 
+      console.log('[NEWSLETTER] Test response status:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[NEWSLETTER] Test HTTP Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        })
+        
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+
+        setTestResult({
+          success: false,
+          message: errorData.details 
+            ? `${errorData.error || 'Failed to send test emails'}\n\n${errorData.details}` 
+            : errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        })
+        return
+      }
+
       const data = await response.json()
+      console.log('[NEWSLETTER] Test response data:', data)
 
       if (data.success) {
         setTestResult({
@@ -106,13 +141,18 @@ export default function ComposeNewsletterPage() {
       } else {
         setTestResult({
           success: false,
-          message: data.error || 'Failed to send test emails',
+          message: data.details 
+            ? `${data.error || 'Failed to send test emails'}\n\n${data.details}` 
+            : data.error || 'Failed to send test emails',
         })
       }
     } catch (error) {
+      console.error('[NEWSLETTER] Test network error:', error)
       setTestResult({
         success: false,
-        message: 'Network error. Please try again.',
+        message: error instanceof Error 
+          ? `Network error: ${error.message}` 
+          : 'Network error. Please check your connection and try again.',
       })
     } finally {
       setSendingTest(false)
@@ -136,6 +176,16 @@ export default function ComposeNewsletterPage() {
     setSendResult(null)
 
     try {
+      console.log('[NEWSLETTER] Starting send to all subscribers...', {
+        subject,
+        provider,
+        htmlLength: html.length,
+        hasPlaceholders: {
+          viewInBrowser: html.includes('{VIEW_IN_BROWSER_URL}'),
+          unsubscribe: html.includes('{UNSUBSCRIBE_URL}'),
+        },
+      })
+
       const response = await fetch('/api/email-marketing/send', {
         method: 'POST',
         headers: {
@@ -151,7 +201,37 @@ export default function ComposeNewsletterPage() {
         }),
       })
 
+      console.log('[NEWSLETTER] Response status:', response.status, response.statusText)
+
+      // Check if response is ok before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[NEWSLETTER] HTTP Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        })
+        
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}`, details: errorText }
+        }
+
+        const errorMessage = errorData.details 
+          ? `${errorData.error || 'Failed to send newsletter'}\n\n${errorData.details}` 
+          : errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        
+        setSendResult({
+          success: false,
+          message: errorMessage,
+        })
+        return
+      }
+
       const data = await response.json()
+      console.log('[NEWSLETTER] Response data:', data)
 
       if (data.success) {
         setSendResult({
@@ -162,8 +242,14 @@ export default function ComposeNewsletterPage() {
       } else {
         // Show detailed error message including Gmail limit info
         const errorMessage = data.details 
-          ? `${data.error}\n\n${data.details}` 
+          ? `${data.error || 'Failed to send newsletter'}\n\n${data.details}` 
           : data.error || 'Failed to send newsletter'
+        
+        console.error('[NEWSLETTER] Send failed:', {
+          error: data.error,
+          details: data.details,
+          errors: data.errors,
+        })
         
         setSendResult({
           success: false,
@@ -171,9 +257,14 @@ export default function ComposeNewsletterPage() {
         })
       }
     } catch (error) {
+      console.error('[NEWSLETTER] Network/Parse error:', error)
+      const errorMessage = error instanceof Error 
+        ? `Network error: ${error.message}` 
+        : 'Network error. Please check your connection and try again.'
+      
       setSendResult({
         success: false,
-        message: 'Network error. Please try again.',
+        message: errorMessage,
       })
     } finally {
       setSending(false)
@@ -228,10 +319,32 @@ export default function ComposeNewsletterPage() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="provider">SMTP Provider *</Label>
+            <Select value={provider} onValueChange={(value: 'gmail' | 'relay' | 'marketing') => setProvider(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gmail">Gmail SMTP (≤500 emails/day)</SelectItem>
+                <SelectItem value="relay">Workspace Relay (bulk sending)</SelectItem>
+                <SelectItem value="marketing">Marketing SMTP (custom)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose the email provider for sending newsletters
+            </p>
+          </div>
+
           <div className="rounded-lg bg-muted p-4 text-sm">
             <p className="font-semibold mb-1">Email Configuration</p>
             <p className="text-muted-foreground">
-              All emails will be sent from <strong>DisciplineRift</strong> &lt;info@disciplinerift.com&gt; using Workspace Relay.
+              All emails will be sent from <strong>DisciplineRift</strong> &lt;luis@disciplinerift.com&gt; using {provider === 'gmail' ? 'Gmail SMTP' : provider === 'relay' ? 'Workspace Relay' : 'Marketing SMTP'}.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              {provider === 'relay' && 'Workspace Relay recommended for bulk sending (1500+ emails)'}
+              {provider === 'gmail' && 'Gmail SMTP limited to 500-2000 emails/day'}
+              {provider === 'marketing' && 'Custom Marketing SMTP for high-volume campaigns'}
             </p>
           </div>
 

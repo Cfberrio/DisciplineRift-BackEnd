@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sendNewsletterEmail, generateUnsubscribeToken, verifyNewsletterEmailConfig } from "@/lib/mailer/newsletter-mailer"
+import { sendNewsletterEmail, verifyNewsletterEmailConfig } from "@/lib/mailer/newsletter-mailer"
+import { signUnsubToken } from "@/lib/mailer/unsub"
 import type { SmtpProvider } from "@/lib/mailer/providers"
 
 interface TestEmailRequest {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const results = []
-    const dummyToken = generateUnsubscribeToken('test@example.com')
+    const dummyToken = signUnsubToken('test@example.com')
 
     for (const email of test_emails) {
       // Validate email format
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         text: text_alt || html.replace(/<[^>]*>/g, ''),
         fromName: from_name,
         fromEmail: from_email,
-        unsubscribeUrl: dummyToken,
+        unsubscribeToken: dummyToken,
         provider: selectedProvider,
       })
 

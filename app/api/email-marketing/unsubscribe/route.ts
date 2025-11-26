@@ -4,281 +4,158 @@ import { verifyUnsubToken } from "@/lib/mailer/unsub"
 
 type RequestSource = "GET" | "POST"
 
+const HTML_HEADERS = { "Content-Type": "text/html; charset=utf-8" }
+const TEXT_HEADERS = { "Content-Type": "text/plain; charset=utf-8" }
+
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@")
+  if (!local || !domain) return email
+  if (local.length <= 2) {
+    return `${local[0]}***@${domain}`
+  }
+  return `${local[0]}***${local.slice(-1)}@${domain}`
+}
+
+function buildHtmlResponse(options: { heading: string; message: string; emoji?: string }) {
+  const emoji = options.emoji ? `${options.emoji} ` : ""
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${options.heading}</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f8fafc;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      padding: 40px 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      max-width: 480px;
+      text-align: center;
+    }
+    h1 {
+      color: #0f172a;
+      margin-bottom: 16px;
+      font-size: 26px;
+    }
+    p {
+      color: #475569;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .small {
+      font-size: 13px;
+      margin-top: 18px;
+      color: #94a3b8;
+    }
+    a {
+      color: #0ea5e9;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>${emoji}${options.heading}</h1>
+    <p>${options.message}</p>
+    <p class="small">If this was a mistake, contact support@disciplinerift.com.</p>
+  </div>
+</body>
+</html>`
+}
+
 async function processUnsubscribeRequest(token: string | null, source: RequestSource) {
   const requestTime = new Date().toISOString()
-  console.log(`[UNSUBSCRIBE] ========================================`)
-  console.log(`[UNSUBSCRIBE] Received ${source} unsubscribe request at ${requestTime}`)
-  console.log(`[UNSUBSCRIBE] Token received: ${token ? token.substring(0, 20) + '...' : 'NONE'}`)
+  console.log(`[UNSUBSCRIBE] ${source} request at ${requestTime}. Token=${token ? token.substring(0, 8) + "…" : "NONE"}`)
 
   try {
     if (!token) {
-      console.error('[UNSUBSCRIBE] ✗ No token provided in request')
-
+      console.warn("[UNSUBSCRIBE] Missing token in request")
       return new NextResponse(
-        `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invalid Unsubscribe Link</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              margin: 0;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .container {
-              background: white;
-              padding: 40px;
-              border-radius: 10px;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-              text-align: center;
-              max-width: 500px;
-            }
-            h1 {
-              color: #dc2626;
-              margin-bottom: 20px;
-            }
-            p {
-              color: #666;
-              line-height: 1.6;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>❌ Invalid Link</h1>
-            <p>The unsubscribe link is invalid or has expired.</p>
-          </div>
-        </body>
-        </html>
-        `,
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'text/html',
-          },
-        }
+        buildHtmlResponse({
+          heading: "Invalid link",
+          message: "The unsubscribe link is invalid or has expired.",
+          emoji: "⚠️",
+        }),
+        { status: 400, headers: HTML_HEADERS }
       )
     }
 
-    console.log('[UNSUBSCRIBE] Verifying and decoding token...')
     const { email, valid } = verifyUnsubToken(token)
-    
-    console.log(`[UNSUBSCRIBE] Token validation result: ${valid ? 'VALID' : 'INVALID'}`)
-    console.log(`[UNSUBSCRIBE] Email extracted from token: ${email || 'NONE'}`)
 
     if (!valid || !email) {
-      console.error('[UNSUBSCRIBE] ✗ Token validation failed')
-
+      console.warn("[UNSUBSCRIBE] Token validation failed")
       return new NextResponse(
-        `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invalid Token</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              margin: 0;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .container {
-              background: white;
-              padding: 40px;
-              border-radius: 10px;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-              text-align: center;
-              max-width: 500px;
-            }
-            h1 {
-              color: #dc2626;
-              margin-bottom: 20px;
-            }
-            p {
-              color: #666;
-              line-height: 1.6;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>❌ Invalid Token</h1>
-            <p>The unsubscribe token is invalid or has been tampered with.</p>
-          </div>
-        </body>
-        </html>
-        `,
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'text/html',
-          },
-        }
+        buildHtmlResponse({
+          heading: "Invalid token",
+          message: "The unsubscribe token is invalid or has already expired.",
+          emoji: "⚠️",
+        }),
+        { status: 400, headers: HTML_HEADERS }
       )
     }
 
-    console.log(`[UNSUBSCRIBE] Attempting to delete email from Newsletter table: ${email}`)
-    console.log('[UNSUBSCRIBE] Connecting to Supabase with service role client...')
-    
     const supabase = createServiceSupabaseClient()
-    
-    console.log(`[UNSUBSCRIBE] Executing DELETE query for email: ${email}`)
     const { error: deleteError, count } = await supabase
-      .from('Newsletter')
-      .delete({ count: 'exact' })
-      .ilike('email', email)
+      .from("Newsletter")
+      .delete({ count: "exact" })
+      .ilike("email", email)
 
     if (deleteError) {
-      console.error("[UNSUBSCRIBE] ✗ Database error while deleting:")
-      console.error(`[UNSUBSCRIBE] Error code: ${deleteError.code}`)
-      console.error(`[UNSUBSCRIBE] Error message: ${deleteError.message}`)
-      console.error(`[UNSUBSCRIBE] Error details:`, deleteError)
+      console.error("[UNSUBSCRIBE] Database error while deleting subscriber", {
+        code: deleteError.code,
+        hint: deleteError.hint,
+      })
       return new NextResponse(
-        `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Error</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              margin: 0;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .container {
-              background: white;
-              padding: 40px;
-              border-radius: 10px;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-              text-align: center;
-              max-width: 500px;
-            }
-            h1 {
-              color: #dc2626;
-              margin-bottom: 20px;
-            }
-            p {
-              color: #666;
-              line-height: 1.6;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>⚠️ Error</h1>
-            <p>An error occurred while processing your unsubscribe request. Please try again later.</p>
-          </div>
-        </body>
-        </html>
-        `,
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'text/html',
-          },
-        }
+        buildHtmlResponse({
+          heading: "Temporary issue",
+          message: "We could not complete your request. Please try again later.",
+          emoji: "⚠️",
+        }),
+        { status: 500, headers: HTML_HEADERS }
       )
     }
 
-    console.log(`[UNSUBSCRIBE] ✓ DELETE query executed successfully`)
-    console.log(`[UNSUBSCRIBE] Rows affected: ${count !== null ? count : 'unknown'}`)
-    console.log(`[UNSUBSCRIBE] ✓ Successfully unsubscribed: ${email}`)
-    console.log(`[UNSUBSCRIBE] Email ${email} has been removed from Newsletter table`)
-    console.log(`[UNSUBSCRIBE] Request source: ${source}`)
-    console.log(`[UNSUBSCRIBE] ========================================`)
+    console.log("[UNSUBSCRIBE] Deletion processed", {
+      source,
+      removedRows: count ?? 0,
+      email: maskEmail(email),
+    })
 
     if (source === "POST") {
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-        },
-      })
+      return new NextResponse("OK", { status: 200, headers: TEXT_HEADERS })
     }
 
-    // Redirect to confirmation page for GET requests
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://www.disciplinerift.com'
-    const redirectUrl = `${baseUrl}/unsubscribe-success?email=${encodeURIComponent(email)}`
-    
-    return NextResponse.redirect(redirectUrl, 302)
-
-  } catch (error) {
-    console.error("[UNSUBSCRIBE] ✗ Unexpected error in unsubscribe handler:")
-    console.error("[UNSUBSCRIBE] Error:", error)
-    console.error(`[UNSUBSCRIBE] Error type: ${error instanceof Error ? error.constructor.name : typeof error}`)
-    if (error instanceof Error) {
-      console.error(`[UNSUBSCRIBE] Error message: ${error.message}`)
-      console.error(`[UNSUBSCRIBE] Error stack:`, error.stack)
-    }
-    console.log(`[UNSUBSCRIBE] ========================================`)
     return new NextResponse(
-      `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Error</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-          .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 500px;
-          }
-          h1 {
-            color: #dc2626;
-            margin-bottom: 20px;
-          }
-          p {
-            color: #666;
-            line-height: 1.6;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>⚠️ Error</h1>
-          <p>An unexpected error occurred. Please try again later.</p>
-        </div>
-      </body>
-      </html>
-      `,
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      }
+      buildHtmlResponse({
+        heading: "You're unsubscribed",
+        message: "Your email has been removed from our marketing list. Thanks for staying in control of what you receive.",
+        emoji: "✅",
+      }),
+      { status: 200, headers: HTML_HEADERS }
+    )
+  } catch (error) {
+    console.error("[UNSUBSCRIBE] Unexpected error", error)
+    return new NextResponse(
+      buildHtmlResponse({
+        heading: "Something went wrong",
+        message: "An unexpected error occurred. Please try again in a few minutes.",
+        emoji: "⚠️",
+      }),
+      { status: 500, headers: HTML_HEADERS }
     )
   }
 }

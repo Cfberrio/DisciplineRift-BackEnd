@@ -57,7 +57,7 @@ Add to `.env.local`:
 # ==========================================
 GMAIL_HOST=smtp.gmail.com
 GMAIL_PORT=465
-GMAIL_USER=info@disciplinerift.com
+GMAIL_USER=luis@disciplinerift.com
 GMAIL_APP_PASSWORD=your-gmail-app-password
 
 # ==========================================
@@ -66,7 +66,7 @@ GMAIL_APP_PASSWORD=your-gmail-app-password
 RELAY_HOST=smtp-relay.gmail.com
 RELAY_PORT=587
 RELAY_REQUIRE_TLS=true
-RELAY_USER=info@disciplinerift.com
+RELAY_USER=luis@disciplinerift.com
 RELAY_PASS=your-workspace-app-password
 
 # ==========================================

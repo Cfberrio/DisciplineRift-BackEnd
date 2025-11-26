@@ -155,7 +155,7 @@ Send test emails to specified addresses.
   "title": "Test Campaign",
   "subject": "Test Subject",
   "from_name": "DisciplineRift",
-  "from_email": "info@disciplinerift.com",
+  "from_email": "luis@disciplinerift.com",
   "html": "<h1>Hello World</h1>",
   "text_alt": "Hello World",
   "test_emails": ["test1@example.com", "test2@example.com"]
@@ -192,7 +192,7 @@ Send newsletter to all Newsletter subscribers.
   "title": "Monthly Newsletter",
   "subject": "Updates from DisciplineRift",
   "from_name": "DisciplineRift Team",
-  "from_email": "info@disciplinerift.com",
+  "from_email": "luis@disciplinerift.com",
   "html": "<h1>Newsletter Content</h1>",
   "text_alt": "Newsletter Content"
 }
