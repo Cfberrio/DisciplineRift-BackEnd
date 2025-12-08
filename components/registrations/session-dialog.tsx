@@ -160,12 +160,20 @@ export function SessionDialog({
 
   const isLoading = createSession.isPending || updateSession.isPending
 
-  // Get coaches (staff with coach role, or all staff if role doesn't exist)
+  // Debug logging
+  console.log("[SessionDialog] Staff loading:", staffLoading)
+  console.log("[SessionDialog] Staff error:", staffError)
+  console.log("[SessionDialog] Staff data:", staff)
+  console.log("[SessionDialog] Staff count:", staff?.length || 0)
+
+  // Get coaches (staff with coach role, or all staff if role doesn't exist or is empty)
   const coaches = staff?.filter((s) => {
-    // If role field exists, filter by "coach"
-    // If role field doesn't exist, include all staff
-    return !s.role || s.role === "coach"
+    // If role field doesn't exist, is null, is empty string, or is "coach", include the staff member
+    return !s.role || s.role === "" || s.role === "coach"
   }) || []
+
+  console.log("[SessionDialog] Filtered coaches:", coaches)
+  console.log("[SessionDialog] Coaches count:", coaches.length)
 
   // Helper function to get full name
   const getStaffFullName = (staffMember: any) => {
@@ -340,7 +348,9 @@ export function SessionDialog({
                         </div>
                       ) : coaches.length === 0 ? (
                         <div className="py-2 px-2 text-sm text-muted-foreground">
-                          No coaches available (Total staff: {staff?.length || 0})
+                          <p className="mb-1">No coaches available</p>
+                          <p className="text-xs">Total staff in system: {staff?.length || 0}</p>
+                          <p className="text-xs">Please add staff members in the Staff section</p>
                         </div>
                       ) : (
                         coaches.map((coach) => (

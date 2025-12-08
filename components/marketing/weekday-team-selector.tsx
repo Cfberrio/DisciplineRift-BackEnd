@@ -17,6 +17,7 @@ interface Team {
   participants: number
   isactive: boolean
   isongoing: boolean
+  status?: string | null
   school?: {
     name: string
     location: string
@@ -34,7 +35,7 @@ interface WeekdayGroup {
 interface WeekdayTeamSelectorProps {
   onTeamSelect: (teamId: string | null) => void
   selectedTeamId?: string | null
-  seasonType: 'current' | 'upcoming'
+  seasonType: 'current' | 'upcoming' | 'closed'
 }
 
 const WEEKDAYS_MAP: Record<string, string> = {
@@ -76,14 +77,17 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
         
         const allTeams: Team[] = await response.json()
         
-        // Filter teams based on season type
+        // Filter teams based on season type using status column
         const activeTeams = allTeams.filter((team: Team) => {
           if (seasonType === 'current') {
-            // Current season: active but not ongoing
-            return team.isactive === true && team.isongoing === false
+            // Ongoing: teams with status 'ongoing'
+            return team.status === 'ongoing'
+          } else if (seasonType === 'upcoming') {
+            // Open: teams with status 'open'
+            return team.status === 'open'
           } else {
-            // Upcoming season: active and ongoing
-            return team.isactive === true && team.isongoing === true
+            // Closed: teams with status 'closed'
+            return team.status === 'closed'
           }
         })
 

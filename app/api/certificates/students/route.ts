@@ -20,10 +20,9 @@ export async function GET(request: NextRequest) {
 
       const { data: teams, error: teamsError } = await supabase
         .from("team")
-        .select("teamid, name, sport")
+        .select("teamid, name, sport, status")
         .eq("sport", sport)
-        .eq("isactive", true)
-        .eq("isongoing", false)
+        .eq("status", "closed")
         .order("name", { ascending: true })
 
       if (teamsError) {
@@ -47,11 +46,10 @@ export async function GET(request: NextRequest) {
     // 1. Verify team exists and matches sport
     const { data: team, error: teamError } = await supabase
       .from("team")
-      .select("teamid, name, sport")
+      .select("teamid, name, sport, status")
       .eq("teamid", teamid)
       .eq("sport", sport)
-      .eq("isactive", true)
-      .eq("isongoing", false)
+      .eq("status", "closed")
       .single()
 
     if (teamError || !team) {

@@ -14,6 +14,7 @@ interface Team {
   participants: number
   isactive: boolean
   isongoing: boolean
+  status?: string | null
   school?: {
     name: string
     location: string

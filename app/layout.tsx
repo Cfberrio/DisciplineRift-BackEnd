@@ -7,7 +7,7 @@ import { QueryProvider } from "@/lib/providers/query-provider";
 import { ServicesProvider } from "@/contexts/services-context";
 import { SchoolsProvider } from "@/contexts/schools-context";
 import { StaffProvider } from "@/contexts/staff-context";
-import { RefreshDetector } from "@/components/auth/refresh-detector";
+// import { RefreshDetector } from "@/components/auth/refresh-detector"; // DISABLED: Causaba loops infinitos con recargas constantes
 import MetricsProvider from "@/components/metrics-provider";
 import DevWDYR from "@/components/dev-wdyr";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,7 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         {process.env.NODE_ENV === 'development' ? <DevWDYR /> : null}
-        <RefreshDetector />
+        {/* <RefreshDetector /> */} {/* DISABLED: Causaba loops infinitos con recargas constantes */}
         <MetricsProvider>
           <AuthProvider>
             <QueryProvider>

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
           participants,
           isactive,
           isongoing,
+          status,
           sport,
           school:schoolid (
             name,

@@ -34,7 +34,7 @@ interface EmailCampaignProps {
 export function EmailCampaign({ onClose }: EmailCampaignProps) {
   // State to select campaign type
   const [campaignType, setCampaignType] = useState<'email' | 'sms' | null>(null)
-  const [seasonType, setSeasonType] = useState<'current' | 'upcoming' | null>(null)
+  const [seasonType, setSeasonType] = useState<'current' | 'upcoming' | 'closed' | null>(null)
   
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
   const [selectedParents, setSelectedParents] = useState<string[]>([])
@@ -563,11 +563,11 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 Step 1: Select Season
               </CardTitle>
               <CardDescription>
-                Choose between current season (active teams about to start) or upcoming season (teams currently running)
+                Choose between Ongoing (teams currently running), Open (teams open for registration), or Closed (teams that have finished)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button
                   onClick={() => {
                     setSeasonType('current')
@@ -579,8 +579,8 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 >
                   <Calendar className="h-8 w-8" />
                   <div className="text-center">
-                    <div className="font-semibold">Current Season</div>
-                    <div className="text-xs opacity-80">Teams about to start</div>
+                    <div className="font-semibold">Ongoing</div>
+                    <div className="text-xs opacity-80">Teams currently running</div>
                   </div>
                 </Button>
 
@@ -595,8 +595,24 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 >
                   <Calendar className="h-8 w-8" />
                   <div className="text-center">
-                    <div className="font-semibold">Upcoming Season</div>
-                    <div className="text-xs opacity-80">Teams currently running</div>
+                    <div className="font-semibold">Open</div>
+                    <div className="text-xs opacity-80">Teams open for registration</div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setSeasonType('closed')
+                    setSelectedTeamId(null)
+                    setSelectedParents([])
+                  }}
+                  variant={seasonType === 'closed' ? 'default' : 'outline'}
+                  className="h-24 flex flex-col items-center justify-center space-y-2"
+                >
+                  <Calendar className="h-8 w-8" />
+                  <div className="text-center">
+                    <div className="font-semibold">Closed</div>
+                    <div className="text-xs opacity-80">Teams that have finished</div>
                   </div>
                 </Button>
               </div>
@@ -605,7 +621,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 <div className="mt-4 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                   <span className="text-sm text-blue-700 font-medium">
-                    {seasonType === 'current' ? 'Current Season' : 'Upcoming Season'} selected
+                    {seasonType === 'current' ? 'Ongoing' : seasonType === 'upcoming' ? 'Open' : 'Closed'} selected
                   </span>
                 </div>
               )}

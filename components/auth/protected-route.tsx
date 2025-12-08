@@ -114,7 +114,8 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     })
 
     return () => subscription.unsubscribe()
-  }, [router, requireAdmin])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // FIX: Sin dependencias para prevenir loops infinitos
 
   if (isLoading) {
     return (

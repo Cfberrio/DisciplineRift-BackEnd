@@ -14,6 +14,7 @@ export interface Team {
   participants: number
   isactive: boolean
   isongoing: boolean
+  status?: string | null
   schoolid: number
   created_at?: string
   updated_at?: string
