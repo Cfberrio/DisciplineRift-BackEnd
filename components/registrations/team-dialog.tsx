@@ -31,7 +31,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import { useSchoolsWithRefresh } from "@/hooks/use-schools-with-refresh"
 import { useCreateTeam, useUpdateTeam, useTeam } from "@/hooks/use-teams"
 import { Loader2 } from "lucide-react"
@@ -42,8 +41,7 @@ const teamSchema = z.object({
   description: z.string().optional(),
   price: z.coerce.number().min(0).optional(),
   participants: z.coerce.number().min(1, "Must have at least 1 participant"),
-  isactive: z.boolean().default(true),
-  isongoing: z.boolean().default(false),
+  status: z.enum(["open", "ongoing", "closed", "archived"]).default("open"),
   schoolid: z.coerce.number().min(1, "School is required"),
 })
 
@@ -72,8 +70,7 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
       description: "",
       price: 0,
       participants: 20,
-      isactive: true,
-      isongoing: false,
+      status: "open",
       schoolid: 0,
     },
   })
@@ -87,8 +84,7 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
         description: team.description || "",
         price: team.price || 0,
         participants: team.participants,
-        isactive: team.isactive,
-        isongoing: team.isongoing,
+        status: team.status || "open",
         schoolid: team.schoolid,
       })
     } else if (open && !isEdit) {
@@ -98,8 +94,7 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
         description: "",
         price: 0,
         participants: 20,
-        isactive: true,
-        isongoing: false,
+        status: "open",
         schoolid: schools?.[0]?.schoolid || 0,
       })
     }
@@ -257,49 +252,55 @@ export function TeamDialog({ open, onOpenChange, teamId }: TeamDialogProps) {
               />
             </div>
 
-            <div className="flex gap-6">
-              <FormField
-                control={form.control}
-                name="isactive"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2 space-y-0">
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team Status *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team status" />
+                      </SelectTrigger>
                     </FormControl>
-                    <div>
-                      <FormLabel>Active</FormLabel>
-                      <FormDescription>
-                        Accept new registrations
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isongoing"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div>
-                      <FormLabel>Ongoing</FormLabel>
-                      <FormDescription>
-                        Sessions are running
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
+                    <SelectContent>
+                      <SelectItem value="open">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Open</span>
+                          <span className="text-xs text-muted-foreground">Accepting registrations</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ongoing">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Ongoing</span>
+                          <span className="text-xs text-muted-foreground">Sessions in progress</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="closed">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Closed</span>
+                          <span className="text-xs text-muted-foreground">Season completed</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="archived">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Archived</span>
+                          <span className="text-xs text-muted-foreground">Inactive/archived team</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Current status of the team
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button

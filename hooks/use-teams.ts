@@ -43,8 +43,7 @@ export interface TeamFilters {
   search?: string
   schoolId?: number
   sport?: string
-  isactive?: boolean
-  isongoing?: boolean
+  status?: string
 }
 
 export interface CreateTeamInput {
@@ -53,8 +52,7 @@ export interface CreateTeamInput {
   description?: string
   price?: number
   participants: number
-  isactive: boolean
-  isongoing: boolean
+  status?: string
   schoolid: number
 }
 
@@ -253,8 +251,7 @@ export function useCreateTeam() {
           description: input.description || null,
           price: input.price || null,
           participants: input.participants,
-          isactive: input.isactive,
-          isongoing: input.isongoing,
+          status: input.status || "open",
           schoolid: input.schoolid,
         })
         .select()
@@ -314,8 +311,7 @@ export function useUpdateTeam() {
       if (updateData.description !== undefined) dataToUpdate.description = updateData.description || null
       if (updateData.price !== undefined) dataToUpdate.price = updateData.price || null
       if (updateData.participants !== undefined) dataToUpdate.participants = updateData.participants
-      if (updateData.isactive !== undefined) dataToUpdate.isactive = updateData.isactive
-      if (updateData.isongoing !== undefined) dataToUpdate.isongoing = updateData.isongoing
+      if (updateData.status !== undefined) dataToUpdate.status = updateData.status
       if (updateData.schoolid !== undefined) dataToUpdate.schoolid = updateData.schoolid
 
       // Use client-side Supabase (with user session)

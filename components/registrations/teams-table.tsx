@@ -208,16 +208,26 @@ export function TeamsTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      <Badge variant={team.isactive ? "default" : "secondary"}>
-                        {team.isactive ? "Active" : "Inactive"}
-                      </Badge>
-                      {team.isongoing && (
-                        <Badge variant="outline" className="bg-orange-50">
-                          Ongoing
-                        </Badge>
-                      )}
-                    </div>
+                    <Badge 
+                      variant={
+                        team.status === "open" ? "default" : 
+                        team.status === "ongoing" ? "outline" : 
+                        team.status === "closed" ? "secondary" : 
+                        "secondary"
+                      }
+                      className={
+                        team.status === "ongoing" ? "bg-orange-50 border-orange-300 text-orange-700" :
+                        team.status === "closed" ? "bg-gray-100 text-gray-700" :
+                        team.status === "archived" ? "bg-gray-200 text-gray-500" :
+                        ""
+                      }
+                    >
+                      {team.status === "open" && "Open"}
+                      {team.status === "ongoing" && "Ongoing"}
+                      {team.status === "closed" && "Closed"}
+                      {team.status === "archived" && "Archived"}
+                      {!team.status && "Unknown"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">

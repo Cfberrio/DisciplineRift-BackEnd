@@ -2,5 +2,3 @@ pnpm-lock.yaml
 yarn.lock
 .pnpm-debug.log
 cursor_project_rules/
-PERFORMANCE-OPTIMIZATIONS.md
-README-calendar.md
