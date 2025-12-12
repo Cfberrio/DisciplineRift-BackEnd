@@ -81,6 +81,11 @@ export function EnrollmentsManager({
     studentName: string
   } | null>(null)
 
+  // Determinar si este equipo requiere mostrar uniform_size
+  const shouldShowUniformSize = 
+    teamName === "15U TEAM (7th-8th)" || 
+    teamName === "13U LEAGU TEAM (5th-6th GRADE + ADVANCED PLAYERS)"
+
   // Log enrollments for debugging
   React.useEffect(() => {
     console.log("[EnrollmentsManager] Team ID:", teamId)
@@ -231,6 +236,7 @@ export function EnrollmentsManager({
                     <TableHead>Student</TableHead>
                     <TableHead>Grade</TableHead>
                     <TableHead>Age</TableHead>
+                    {shouldShowUniformSize && <TableHead>Uniform Size</TableHead>}
                     <TableHead>Parent</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead className="w-[70px]">Actions</TableHead>
@@ -264,6 +270,15 @@ export function EnrollmentsManager({
                         <TableCell>
                           {age ? `${age} years` : <span className="text-muted-foreground">—</span>}
                         </TableCell>
+                        {shouldShowUniformSize && (
+                          <TableCell>
+                            {student.uniform_size ? (
+                              <Badge variant="secondary">{student.uniform_size}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell>
                           {parent ? (
                             <div>
