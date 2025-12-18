@@ -1,6 +1,20 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import type { RosterData } from "@/hooks/use-roster"
+import { DateTime } from "luxon"
+import { expandOccurrences } from "@/utils/schedule"
+
+function formatOccurrence(occurrence: { start: Date; end: Date }): string {
+  const startDateTime = DateTime.fromJSDate(occurrence.start, { zone: "America/New_York" })
+  const endDateTime = DateTime.fromJSDate(occurrence.end, { zone: "America/New_York" })
+  
+  // Formato: "Tuesday, Jan 21, 6:00 PM – 7:00 PM"
+  const formattedDate = startDateTime.toLocaleString(DateTime.DATETIME_MED_WITH_WEEKDAY, { locale: "en-US" })
+  const timeRange = `${startDateTime.toLocaleString(DateTime.TIME_SIMPLE, { locale: "en-US" })} – ${endDateTime.toLocaleString(DateTime.TIME_SIMPLE, { locale: "en-US" })}`
+  
+  // Extraer solo la parte de fecha (sin "at time")
+  return `${formattedDate.split(" at ")[0]}, ${timeRange}`
+}
 
 function formatTime(time: string) {
   try {
@@ -118,14 +132,66 @@ export async function generateRosterPDF(roster: RosterData) {
     finalY + 25
   )
 
-  // Add schedule if sessions exist
+  // Add detailed schedule with specific dates for each session
   if (roster.sessions && roster.sessions.length > 0) {
-    const session = roster.sessions[0]
-    doc.text(
-      `Schedule: ${session.daysofweek} ${session.starttime} - ${session.endtime}`,
-      20,
-      finalY + 35
-    )
+    let yPosition = finalY + 35
+    
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.text("Session Schedule:", 20, yPosition)
+    yPosition += 10
+    
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "normal")
+    
+    roster.sessions.forEach((session, sessionIndex) => {
+      // Expandir todas las ocurrencias de esta sesión
+      const occurrences = expandOccurrences({
+        startdate: session.startdate || new Date().toISOString().split("T")[0],
+        enddate: session.enddate,
+        starttime: session.starttime,
+        endtime: session.endtime,
+        daysofweek: session.daysofweek,
+        cancel: null, // El roster no maneja cancelaciones
+      })
+      
+      // Si hay múltiples sesiones, agregar un subtítulo
+      if (roster.sessions.length > 1) {
+        doc.setFont("helvetica", "bold")
+        doc.text(
+          `Session ${sessionIndex + 1}: ${session.daysofweek} (${occurrences.length} dates)`,
+          25,
+          yPosition
+        )
+        yPosition += 7
+        doc.setFont("helvetica", "normal")
+      }
+      
+      // Mostrar cada ocurrencia
+      occurrences.forEach((occurrence) => {
+        const formattedOccurrence = formatOccurrence(occurrence)
+        
+        // Verificar si necesitamos una nueva página
+        if (yPosition > 180) { // Límite antes del final de la página en landscape
+          doc.addPage()
+          yPosition = 20
+          doc.setFontSize(12)
+          doc.setFont("helvetica", "bold")
+          doc.text("Session Schedule (continued):", 20, yPosition)
+          yPosition += 10
+          doc.setFontSize(9)
+          doc.setFont("helvetica", "normal")
+        }
+        
+        doc.text(`• ${formattedOccurrence}`, 25, yPosition)
+        yPosition += 5
+      })
+      
+      // Espacio entre sesiones diferentes
+      if (sessionIndex < roster.sessions.length - 1) {
+        yPosition += 5
+      }
+    })
   }
 
   // Generate filename - EXACT FORMAT FROM SERVICES
