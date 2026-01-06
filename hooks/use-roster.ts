@@ -41,6 +41,7 @@ export interface RosterData {
       lastname: string
       grade: string
       dob: string | null
+      level: string | null
       ecname: string | null
       ecphone: string | null
       ecrelationship: string | null

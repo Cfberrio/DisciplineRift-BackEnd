@@ -51,7 +51,7 @@ export async function generateRosterPDF(roster: RosterData) {
     const row = [
       student.firstname || "N/A",
       student.lastname || "N/A",
-      student.dob || "N/A",
+      student.level || "N/A",
       student.grade || "N/A",
       student.studentdismisall || student.StudentDismisall || "N/A",
       student.teacher || "N/A",
@@ -74,7 +74,7 @@ export async function generateRosterPDF(roster: RosterData) {
   const headers = [
     "First Name",
     "Last Name",
-    "DOB",
+    "Level",
     "Grade",
     "Dismissal",
     "Teacher",
@@ -105,7 +105,7 @@ export async function generateRosterPDF(roster: RosterData) {
     columnStyles: {
       0: { cellWidth: 30 }, // First Name
       1: { cellWidth: 30 }, // Last Name
-      2: { cellWidth: 25, halign: "center" }, // DOB
+      2: { cellWidth: 20, halign: "center" }, // Level
       3: { cellWidth: 15, halign: "center" }, // Grade
       4: { cellWidth: 25 }, // Dismissal
       5: { cellWidth: 25 }, // Teacher

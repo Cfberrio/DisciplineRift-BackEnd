@@ -8,6 +8,7 @@ export type Student = {
   lastname: string
   dob: string
   grade: string
+  level?: string
   ecname: string
   ecphone: string
   ecrelationship: string

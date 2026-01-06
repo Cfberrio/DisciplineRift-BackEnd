@@ -290,7 +290,7 @@ export function RosterView({ teamId }: RosterViewProps) {
                         Last Name
                       </th>
                       <th className="px-3 py-2 text-left font-medium text-gray-700">
-                        DOB
+                        Level
                       </th>
                       <th className="px-3 py-2 text-left font-medium text-gray-700">
                         Grade
@@ -328,7 +328,7 @@ export function RosterView({ teamId }: RosterViewProps) {
                             {student.lastname || "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {formatDate(student.dob)}
+                            {student.level || "N/A"}
                           </td>
                           <td className="px-3 py-2 text-center">
                             {student.grade || "N/A"}
