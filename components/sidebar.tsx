@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Users, GraduationCap, UserCheck, Mail, FileText, Bell, Award, LogOut, ChevronLeft, ChevronRight, ClipboardList, Newspaper } from "lucide-react"
+import { Home, Calendar, Users, GraduationCap, UserCheck, Mail, FileText, Bell, Award, LogOut, ChevronLeft, ChevronRight, ClipboardList, Newspaper, Percent } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
@@ -15,6 +15,7 @@ const navigation = [
   { name: "Registrations", href: "/registrations", icon: ClipboardList },
   { name: "Schools", href: "/escuelas", icon: GraduationCap },
   { name: "Staff", href: "/staff", icon: UserCheck },
+  { name: "Discount", href: "/discount", icon: Percent },
   { name: "Applications", href: "/applications", icon: FileText },
   { name: "Email Campaigns", href: "/marketing", icon: Mail },
   { name: "Newsletter", href: "/email-marketing", icon: Newspaper },
