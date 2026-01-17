@@ -1,4 +1,4 @@
-import { createClient } from "../supabase/client"
+import { supabase } from "../supabase/client"
 
 export type Coupon = {
   couponid: string
@@ -26,7 +26,6 @@ export const couponClient = {
    * Get all coupons
    */
   async getAll(): Promise<Coupon[]> {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from("coupon")
       .select("*")
@@ -40,7 +39,6 @@ export const couponClient = {
    * Get a single coupon by ID
    */
   async getById(couponid: string): Promise<Coupon | null> {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from("coupon")
       .select("*")
@@ -55,7 +53,6 @@ export const couponClient = {
    * Get a coupon by code
    */
   async getByCode(code: string): Promise<Coupon | null> {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from("coupon")
       .select("*")
@@ -73,8 +70,6 @@ export const couponClient = {
    * Create a new coupon
    */
   async create(input: CreateCouponInput): Promise<Coupon> {
-    const supabase = createClient()
-    
     // Ensure code is uppercase
     const couponData = {
       code: input.code.toUpperCase(),
@@ -96,8 +91,6 @@ export const couponClient = {
    * Update a coupon
    */
   async update(couponid: string, input: UpdateCouponInput): Promise<Coupon> {
-    const supabase = createClient()
-    
     const updateData: any = {}
     if (input.code !== undefined) updateData.code = input.code.toUpperCase()
     if (input.percentage !== undefined) updateData.percentage = input.percentage
@@ -118,7 +111,6 @@ export const couponClient = {
    * Delete a coupon
    */
   async delete(couponid: string): Promise<void> {
-    const supabase = createClient()
     const { error } = await supabase
       .from("coupon")
       .delete()
