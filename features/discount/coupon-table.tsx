@@ -49,8 +49,9 @@ export function CouponTable({ coupons, isLoading, onRefresh }: CouponTableProps)
   const handleDelete = (coupon: Coupon) => {
     console.log("CouponTable - handleDelete called with coupon:", {
       couponid: coupon.couponid,
+      couponidLength: coupon.couponid?.length,
+      couponidType: typeof coupon.couponid,
       code: coupon.code,
-      fullCoupon: coupon,
     })
     setSelectedCoupon(coupon)
     setIsDeleteDialogOpen(true)

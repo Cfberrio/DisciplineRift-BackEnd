@@ -28,7 +28,7 @@ export const couponClient = {
   async getAll(): Promise<Coupon[]> {
     const { data, error } = await supabase
       .from("coupon")
-      .select("couponid, code, percentage, isactive, created_at")
+      .select("*")
       .order("created_at", { ascending: false })
 
     if (error) {
