@@ -22,6 +22,8 @@ export default function DiscountPage() {
       }
 
       const data = await response.json()
+      console.log("DiscountPage - Fetched coupons:", data)
+      console.log("DiscountPage - First coupon structure:", data[0])
       setCoupons(data)
     } catch (error) {
       console.error("Error fetching coupons:", error)

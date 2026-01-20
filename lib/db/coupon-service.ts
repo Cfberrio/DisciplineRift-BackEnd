@@ -28,10 +28,19 @@ export const couponClient = {
   async getAll(): Promise<Coupon[]> {
     const { data, error } = await supabase
       .from("coupon")
-      .select("*")
+      .select("couponid, code, percentage, isactive, created_at")
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error("couponClient.getAll - Error:", error)
+      throw error
+    }
+    
+    console.log("couponClient.getAll - Retrieved coupons:", data?.length || 0)
+    if (data && data.length > 0) {
+      console.log("couponClient.getAll - First coupon:", data[0])
+    }
+    
     return data || []
   },
 
@@ -111,12 +120,19 @@ export const couponClient = {
    * Delete a coupon
    */
   async delete(couponid: string): Promise<void> {
+    console.log("couponClient.delete - Deleting coupon with ID:", couponid)
+    
     const { error } = await supabase
       .from("coupon")
       .delete()
       .eq("couponid", couponid)
 
-    if (error) throw error
+    if (error) {
+      console.error("couponClient.delete - Error:", error)
+      throw error
+    }
+    
+    console.log("couponClient.delete - Successfully deleted coupon:", couponid)
   },
 
   /**

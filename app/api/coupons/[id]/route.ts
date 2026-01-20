@@ -85,7 +85,32 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await couponClient.delete(params.id)
+    const couponId = params.id
+
+    // Validate that ID is provided and not undefined
+    if (!couponId || couponId === "undefined") {
+      console.error("DELETE coupon - Invalid ID:", couponId)
+      return NextResponse.json(
+        { error: "Invalid coupon ID provided" },
+        { status: 400 }
+      )
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(couponId)) {
+      console.error("DELETE coupon - Invalid UUID format:", couponId)
+      return NextResponse.json(
+        { error: "Invalid coupon ID format. Must be a valid UUID." },
+        { status: 400 }
+      )
+    }
+
+    console.log("DELETE coupon - Attempting to delete coupon with ID:", couponId)
+    
+    await couponClient.delete(couponId)
+    
+    console.log("DELETE coupon - Successfully deleted:", couponId)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error("Error deleting coupon:", error)

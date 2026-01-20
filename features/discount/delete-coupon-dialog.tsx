@@ -31,7 +31,25 @@ export function DeleteCouponDialog({
   const [isLoading, setIsLoading] = useState(false)
 
   const handleDelete = async () => {
-    if (!coupon) return
+    if (!coupon) {
+      console.error("DeleteCouponDialog - No coupon provided")
+      return
+    }
+
+    if (!coupon.couponid) {
+      console.error("DeleteCouponDialog - Coupon missing couponid:", coupon)
+      toast({
+        title: "Error",
+        description: "Invalid coupon data. Missing coupon ID.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    console.log("DeleteCouponDialog - Attempting to delete coupon:", {
+      couponid: coupon.couponid,
+      code: coupon.code,
+    })
 
     setIsLoading(true)
 
@@ -40,10 +58,13 @@ export function DeleteCouponDialog({
         method: "DELETE",
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || "Failed to delete coupon")
       }
+
+      console.log("DeleteCouponDialog - Successfully deleted coupon:", coupon.code)
 
       toast({
         title: "Success",
