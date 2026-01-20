@@ -15,6 +15,7 @@ interface Team {
   description: string
   price: number
   participants: number
+  enrolledCount?: number
   isactive: boolean
   isongoing: boolean
   status?: string | null
@@ -243,9 +244,9 @@ export function WeekdayTeamSelector({ onTeamSelect, selectedTeamId, seasonType }
                           {team.school.name} - {team.school.location}
                         </span>
                       )}
-                      {team.participants > 0 && (
+                      {(team.enrolledCount !== undefined && team.enrolledCount > 0) && (
                         <Badge variant="outline" className="w-fit text-xs">
-                          {team.participants} participants
+                          {team.enrolledCount} enrolled
                         </Badge>
                       )}
                     </div>

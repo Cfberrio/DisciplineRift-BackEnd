@@ -42,7 +42,25 @@ export async function GET(request: NextRequest) {
         throw new Error(error.message);
       }
 
-      return NextResponse.json(teams || []);
+      // Count active enrollments for each team
+      const teamsWithEnrollmentCount = await Promise.all(
+        (teams || []).map(async (team) => {
+          const { count, error: countError } = await supabase
+            .from("enrollment")
+            .select("*", { count: "exact", head: true })
+            .eq("teamid", team.teamid)
+            .eq("isactive", true);
+
+          if (countError) {
+            console.error(`Error counting enrollments for team ${team.teamid}:`, countError);
+            return { ...team, enrolledCount: 0 };
+          }
+
+          return { ...team, enrolledCount: count || 0 };
+        })
+      );
+
+      return NextResponse.json(teamsWithEnrollmentCount);
     }
 
     // Default: fetch teams without sessions
