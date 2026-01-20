@@ -6,10 +6,11 @@ export const dynamic = "force-dynamic"
 // GET /api/coupons/[id] - Get a single coupon
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const coupon = await couponClient.getById(params.id)
+    const { id } = await params
+    const coupon = await couponClient.getById(id)
     
     if (!coupon) {
       return NextResponse.json(
@@ -31,9 +32,10 @@ export async function GET(
 // PATCH /api/coupons/[id] - Update a coupon
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { code, percentage, isactive } = body
 
@@ -55,7 +57,7 @@ export async function PATCH(
     // If updating code, check if it already exists
     if (code) {
       const existingCoupon = await couponClient.getByCode(code)
-      if (existingCoupon && existingCoupon.couponid !== params.id) {
+      if (existingCoupon && existingCoupon.couponid !== id) {
         return NextResponse.json(
           { error: "A coupon with this code already exists" },
           { status: 409 }
@@ -63,7 +65,7 @@ export async function PATCH(
       }
     }
 
-    const updatedCoupon = await couponClient.update(params.id, {
+    const updatedCoupon = await couponClient.update(id, {
       code,
       percentage,
       isactive,
@@ -82,10 +84,11 @@ export async function PATCH(
 // DELETE /api/coupons/[id] - Delete a coupon
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const couponId = params.id
+    const { id } = await params
+    const couponId = id
 
     // Validate that no sea undefined o vacío
     if (!couponId || couponId === "undefined" || couponId.trim() === "") {
