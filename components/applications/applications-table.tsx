@@ -95,11 +95,6 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
     window.open(downloadUrl, '_blank')
   }
 
-  const truncateText = (text: string, maxLength: number = 120) => {
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength) + "..."
-  }
-
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1) // Reset a primera página
@@ -177,9 +172,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   <TableHead>Last Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Sport</TableHead>
-                  <TableHead className="w-64">Description</TableHead>
+                  <TableHead className="min-w-96">Description</TableHead>
                   <TableHead className="w-32">Resume</TableHead>
                 </TableRow>
               </TableHeader>
@@ -189,7 +182,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   // Skeleton loading
                   Array.from({ length: pageSize }).map((_, index) => (
                     <TableRow key={index}>
-                      {Array.from({ length: 9 }).map((_, cellIndex) => (
+                      {Array.from({ length: 7 }).map((_, cellIndex) => (
                         <TableCell key={cellIndex}>
                           <div className="h-4 bg-gray-200 rounded animate-pulse" />
                         </TableCell>
@@ -198,7 +191,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   ))
                 ) : applications.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10">
+                    <TableCell colSpan={7} className="text-center py-10">
                       <div className="flex flex-col items-center justify-center text-gray-500">
                         <FileX className="w-8 h-8 mb-2" />
                         <p>No applications available</p>
@@ -218,25 +211,12 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                       <TableCell>{application.lastName}</TableCell>
                       <TableCell>{application.email}</TableCell>
                       <TableCell>{application.number}</TableCell>
-                      <TableCell>{application.currentAddre}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{application.sport}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {application.description ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="cursor-help">
-                                {truncateText(application.description, 120)}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-sm">
-                              <p>{application.description}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-gray-400">No description</span>
-                        )}
+                      <TableCell className="max-w-2xl">
+                        <div className="whitespace-normal break-words text-sm leading-relaxed">
+                          {application.description || (
+                            <span className="text-gray-400 italic">No description</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {application.resume ? (
