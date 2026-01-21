@@ -88,7 +88,8 @@ export async function POST(request: Request) {
       const sessions = enrollment.team?.session || [];
       return sessions.some(session => {
         // Check if session starts on September 17th OR if Wednesday is in the daysofweek
-        const startDate = new Date(session.startdate);
+        // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+        const startDate = new Date(session.startdate + 'T00:00:00');
         const daysOfWeek = session.daysofweek?.toLowerCase() || '';
         
         // Check if session starts on or before Sept 17 and includes Wednesday

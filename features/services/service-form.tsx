@@ -92,8 +92,9 @@ export function ServiceForm({
       // Convert database sessions to Section format
       const convertedSections = initialData.sessions.map((session: any) => ({
         id: session.sessionid?.toString() || Math.random().toString(36).substr(2, 9),
-        startDate: new Date(session.startdate),
-        endDate: session.enddate ? new Date(session.enddate) : undefined,
+        // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+        startDate: new Date(session.startdate + 'T00:00:00'),
+        endDate: session.enddate ? new Date(session.enddate + 'T00:00:00') : undefined,
         startTime: session.starttime,
         endTime: session.endtime,
         daysOfWeek: session.daysofweek ? [session.daysofweek] : [],

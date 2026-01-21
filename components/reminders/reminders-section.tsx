@@ -193,7 +193,9 @@ export default function RemindersSection() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+    const dateWithTime = dateString.includes('T') ? dateString : `${dateString}T00:00:00`
+    return new Date(dateWithTime).toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',

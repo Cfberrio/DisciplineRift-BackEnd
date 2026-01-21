@@ -49,7 +49,9 @@ function formatTime(time: string) {
 function formatDate(date: string | null) {
   if (!date) return null
   try {
-    return new Date(date).toLocaleDateString("en-US", {
+    // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+    const dateWithTime = date.includes('T') ? date : `${date}T00:00:00`
+    return new Date(dateWithTime).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",

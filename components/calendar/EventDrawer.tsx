@@ -218,7 +218,8 @@ export function EventDrawer({ open, onClose, eventInfo, onEventUpdated }: EventD
       return
     }
     
-    if (new Date(editForm.startdate) > new Date(editForm.enddate)) {
+    // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+    if (new Date(editForm.startdate + 'T00:00:00') > new Date(editForm.enddate + 'T00:00:00')) {
       toast({
         title: "Validation Error",
         description: "End date must be after start date",

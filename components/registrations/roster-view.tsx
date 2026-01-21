@@ -35,7 +35,9 @@ function formatTime(time: string) {
 function formatDate(date: string | null) {
   if (!date) return "N/A"
   try {
-    const d = new Date(date)
+    // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+    const dateWithTime = date.includes('T') ? date : `${date}T00:00:00`
+    const d = new Date(dateWithTime)
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')

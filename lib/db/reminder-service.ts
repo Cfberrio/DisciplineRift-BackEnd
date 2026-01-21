@@ -94,8 +94,9 @@ class ReminderService {
 
     return sessions.filter(session => {
       // Verificar si la sesión está en el rango de fechas
-      const startDate = new Date(session.startdate)
-      const endDate = new Date(session.enddate)
+      // Agregar T00:00:00 para forzar interpretación local y evitar desfase de zona horaria
+      const startDate = new Date(session.startdate + 'T00:00:00')
+      const endDate = new Date(session.enddate + 'T00:00:00')
       
       if (today < startDate || today > endDate) {
         return false
