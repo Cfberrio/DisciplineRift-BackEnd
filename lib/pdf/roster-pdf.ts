@@ -54,7 +54,7 @@ export async function generateRosterPDF(roster: RosterData) {
     const row = [
       student.firstname || "N/A",
       student.lastname || "N/A",
-      student.level || "N/A",
+      student.level || student.Level || "N/A",
       student.grade || "N/A",
       student.studentdismisall || student.StudentDismisall || "N/A",
       student.teacher || "N/A",

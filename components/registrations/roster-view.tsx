@@ -335,7 +335,7 @@ export function RosterView({ teamId }: RosterViewProps) {
                             {student.lastname || "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {student.level || "N/A"}
+                            {student.level || student.Level || "N/A"}
                           </td>
                           <td className="px-3 py-2 text-center">
                             {student.grade || "N/A"}

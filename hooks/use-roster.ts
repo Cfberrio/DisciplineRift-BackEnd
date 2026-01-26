@@ -42,6 +42,7 @@ export interface RosterData {
       grade: string
       dob: string | null
       level: string | null
+      Level: string | null
       ecname: string | null
       ecphone: string | null
       ecrelationship: string | null
@@ -127,6 +128,13 @@ async function fetchRoster(teamId: string): Promise<RosterData> {
   }
 
   console.log("[fetchRoster] Enrollments data:", enrollments)
+  if (enrollments && enrollments.length > 0) {
+    console.log("[fetchRoster] Sample student level data:", {
+      student: enrollments[0].student?.firstname,
+      level_minuscula: enrollments[0].student?.level,
+      Level_mayuscula: enrollments[0].student?.Level,
+    })
+  }
   console.log("[fetchRoster] Success! Returning roster with", enrollments?.length || 0, "enrollments")
 
   return {
