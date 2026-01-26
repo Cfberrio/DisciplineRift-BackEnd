@@ -23,60 +23,39 @@ export interface User {
   // Example: role: 'admin' | 'user' | 'guest';
 }
 
-// Analytics types
-export interface AnalyticsMetric {
-  id: string
-  title: string
-  value: number
-  change: number
-  icon: string
-  secondaryValue?: string
-  // Add any additional metric fields from your API
-  // Example: comparisonPeriod?: string;
-}
-
+// Analytics types - Real data from sessions
 export interface AnalyticsData {
-  metrics: AnalyticsMetric[]
-  // Add any additional analytics data from your API
-  // Example: period?: { start: string; end: string };
+  sessionsToday: number
+  studentsExpected: number
+  activeSessions: number
+  nextSessionTime: string | null
 }
 
-// Activity types
+// Activity types - Real enrollment data
 export interface ActivityItem {
   id: string
-  title: string
-  description: string
+  type: "enrollment"
+  studentName: string
+  teamName: string
   timestamp: string
-  type: string
-  icon?: string
-  data?: Record<string, any>
-  // Add any additional activity fields from your API
-  // Example: priority?: 'high' | 'medium' | 'low';
+  relativeTime: string
 }
 
 export interface ActivityData {
   items: ActivityItem[]
-  // Add any additional activity data from your API
-  // Example: pagination?: { page: number; totalPages: number; totalItems: number };
 }
 
-// Schedule types
+// Schedule types - Real sessions from today
 export interface ScheduleEvent {
   id: string
   title: string
-  date: string
   time: string
   participants: number
-  maxParticipants: number
-  // Add any additional event fields from your API
-  // Example: location?: string; status?: 'scheduled' | 'cancelled' | 'completed';
+  sessionId: string
 }
 
 export interface ScheduleData {
   events: ScheduleEvent[]
-  dates: string[]
-  // Add any additional schedule data from your API
-  // Example: filters?: { locations: string[]; types: string[] };
 }
 
 // Service types
@@ -165,4 +144,34 @@ export interface MarketingMetrics {
   }[]
   // Add any additional marketing metrics from your API
   // Example: segmentPerformance?: { segment: string; openRate: number; clickRate: number }[];
+}
+
+// Today Sessions types - For dashboard main view
+export interface TodaySession {
+  sessionId: string
+  teamId: string
+  teamName: string
+  schoolName: string
+  startTime: string
+  endTime: string
+  startDateTime: string
+  endDateTime: string
+  studentCount: number
+  status: "active" | "upcoming" | "completed"
+}
+
+export interface TodaySessionsData {
+  sessions: TodaySession[]
+}
+
+export interface SessionStudent {
+  studentId: string
+  firstName: string
+  lastName: string
+  grade: string
+  level: string | null
+}
+
+export interface SessionStudentsData {
+  students: SessionStudent[]
 }
