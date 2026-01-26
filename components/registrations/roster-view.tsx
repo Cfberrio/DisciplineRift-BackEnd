@@ -312,6 +312,11 @@ export function RosterView({ teamId }: RosterViewProps) {
                       <th className="px-3 py-2 text-left font-medium text-gray-700">
                         Medcondition
                       </th>
+                      {(roster.team.name === "15U TEAM (7th-8th)" || roster.team.name === "DEVELOPMENTAL PROGRAM (1st-5th)") && (
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">
+                          Uniform Size
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -350,6 +355,11 @@ export function RosterView({ teamId }: RosterViewProps) {
                           <td className="px-3 py-2">
                             {student.medcondition || "N/A"}
                           </td>
+                          {(roster.team.name === "15U TEAM (7th-8th)" || roster.team.name === "DEVELOPMENTAL PROGRAM (1st-5th)") && (
+                            <td className="px-3 py-2">
+                              {student.uniform_size || "N/A"}
+                            </td>
+                          )}
                         </tr>
                       )
                     })}

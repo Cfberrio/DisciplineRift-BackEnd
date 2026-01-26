@@ -49,6 +49,7 @@ export interface RosterData {
       medcondition: string | null
       studentdismisall: string | null
       StudentDismisall: string | null
+      uniform_size: string | null
       parent: {
         parentid: string
         firstname: string

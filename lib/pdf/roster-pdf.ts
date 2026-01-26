@@ -44,7 +44,10 @@ export async function generateRosterPDF(roster: RosterData) {
   doc.text(`${roster.team.name || "Team Roster"}`, 20, 35)
   doc.text(`${roster.team.school.name || "School"} Roster`, 20, 45)
 
-  // Prepare table data - EXACT 9 COLUMNS FROM SERVICES
+  // Check if team needs uniform size column
+  const showUniformSize = roster.team.name === "15U TEAM (7th-8th)" || roster.team.name === "DEVELOPMENTAL PROGRAM (1st-5th)"
+
+  // Prepare table data - EXACT 9 COLUMNS FROM SERVICES (or 10 with uniform size)
   const tableData = roster.enrollments.map((enrollment) => {
     const student = enrollment.student
     
@@ -60,17 +63,22 @@ export async function generateRosterPDF(roster: RosterData) {
       student.medcondition || "N/A",
     ]
 
+    if (showUniformSize) {
+      row.push(student.uniform_size || "N/A")
+    }
+
     console.log("PDF row data:", {
       name: `${student.firstname} ${student.lastname}`,
       StudentDismisall: student.studentdismisall || student.StudentDismisall,
       teacher: student.teacher,
       medcondition: student.medcondition,
+      uniform_size: showUniformSize ? student.uniform_size : undefined,
     })
 
     return row
   })
 
-  // Table headers - EXACT FROM SERVICES
+  // Table headers - EXACT FROM SERVICES (or with uniform size for specific teams)
   const headers = [
     "First Name",
     "Last Name",
@@ -83,7 +91,27 @@ export async function generateRosterPDF(roster: RosterData) {
     "Medcondition",
   ]
 
+  if (showUniformSize) {
+    headers.push("Uniform Size")
+  }
+
   // Create table using autoTable - EXACT STYLES FROM SERVICES
+  const columnStyles: { [key: number]: any } = {
+    0: { cellWidth: 30 }, // First Name
+    1: { cellWidth: 30 }, // Last Name
+    2: { cellWidth: 20, halign: "center" }, // Level
+    3: { cellWidth: 15, halign: "center" }, // Grade
+    4: { cellWidth: 25 }, // Dismissal
+    5: { cellWidth: 25 }, // Teacher
+    6: { cellWidth: 30 }, // Emergency
+    7: { cellWidth: 30 }, // Emergency #
+    8: { cellWidth: 30 }, // Medcondition
+  }
+
+  if (showUniformSize) {
+    columnStyles[9] = { cellWidth: 25, halign: "center" } // Uniform Size
+  }
+
   autoTable(doc, {
     head: [headers],
     body: tableData,
@@ -102,17 +130,7 @@ export async function generateRosterPDF(roster: RosterData) {
     alternateRowStyles: {
       fillColor: [245, 245, 245], // EXACT: Light gray for alternate rows
     },
-    columnStyles: {
-      0: { cellWidth: 30 }, // First Name
-      1: { cellWidth: 30 }, // Last Name
-      2: { cellWidth: 20, halign: "center" }, // Level
-      3: { cellWidth: 15, halign: "center" }, // Grade
-      4: { cellWidth: 25 }, // Dismissal
-      5: { cellWidth: 25 }, // Teacher
-      6: { cellWidth: 30 }, // Emergency
-      7: { cellWidth: 30 }, // Emergency #
-      8: { cellWidth: 30 }, // Medcondition
-    },
+    columnStyles,
     margin: { left: 20, right: 20 },
     tableWidth: "auto",
   })
