@@ -56,16 +56,16 @@ function EscuelasInner() {
       setBusy(true)
       if (editingSchool) {
         await updateSchool(editingSchool.schoolid, data)
-        toast({ title: "Éxito", description: "Escuela actualizada." })
+        toast({ title: "Success", description: "School updated." })
       } else {
         await addSchool(data)
-        toast({ title: "Éxito", description: "Escuela creada." })
+        toast({ title: "Success", description: "School created." })
       }
       setFormOpen(false)
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err?.message ?? "No se pudo guardar.",
+        description: err?.message ?? "Could not save.",
         variant: "destructive",
       })
     } finally {
@@ -147,7 +147,7 @@ function EscuelasInner() {
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Detalles de la Escuela</DialogTitle>
+              <DialogTitle>School Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>

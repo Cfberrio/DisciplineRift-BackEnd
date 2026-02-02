@@ -1,82 +1,73 @@
 "use client"
 
+import { UserPlus, Activity } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail, TrendingUp, UserPlus, Calendar } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { useActivity } from "@/lib/hooks/use-activity"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function ActivityFeed() {
-  const activities = [
-    {
-      id: 1,
-      type: "email",
-      title: "Email Campaign",
-      description: '"Special Offer" - Sent on April 13, 2025',
-      stats: "Delivered: 1.4k • Open rate: 55% • Click rate: 1%",
-      icon: Mail,
-      time: "2 hours ago",
-    },
-    {
-      id: 2,
-      type: "performance",
-      title: "Performance update",
-      description: "15 days have passed since the last email was sent",
-      icon: TrendingUp,
-      time: "1 day ago",
-    },
-    {
-      id: 3,
-      type: "registration",
-      title: "New registration",
-      description: "María González registered for Youth Volleyball",
-      icon: UserPlus,
-      time: "2 days ago",
-    },
-    {
-      id: 4,
-      type: "event",
-      title: "Scheduled event",
-      description: "Spring Tournament - April 25",
-      icon: Calendar,
-      time: "3 days ago",
-    },
-  ]
+  const { data, isLoading, error, refetch } = useActivity()
 
-  const getIconColor = (type: string) => {
-    switch (type) {
-      case "email":
-        return "text-blue-600 bg-blue-100"
-      case "performance":
-        return "text-green-600 bg-green-100"
-      case "registration":
-        return "text-purple-600 bg-purple-100"
-      case "event":
-        return "text-orange-600 bg-orange-100"
-      default:
-        return "text-gray-600 bg-gray-100"
-    }
-  }
+  const activities = data?.items || []
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Activity Feed</CardTitle>
-        <CardDescription>Recent updates</CardDescription>
+    <Card className="lg:col-span-2">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>Recent enrollments</CardDescription>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {activities.map((activity) => (
-          <div key={activity.id} className="flex items-start space-x-3">
-            <div className={`p-2 rounded-full ${getIconColor(activity.type)}`}>
-              <activity.icon className="h-4 w-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-gray-900">{activity.title}</h4>
-                <span className="text-xs text-gray-500">{activity.time}</span>
+      <CardContent className="p-6">
+        {isLoading ? (
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i}>
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="grid gap-1 w-full">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-60" />
+                    <Skeleton className="h-4 w-24 mt-1" />
+                  </div>
+                </div>
+                {i < 3 && <Separator className="my-4" />}
               </div>
-              <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-              {activity.stats && <p className="text-xs text-gray-500 mt-1">{activity.stats}</p>}
-            </div>
+            ))}
           </div>
-        ))}
+        ) : activities.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="font-medium">No recent activity</p>
+            <p className="text-sm mt-2">Enrollments will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {activities.map((activity, index) => (
+              <div key={activity.id}>
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-blue-100 p-2">
+                    <UserPlus className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="grid gap-1 flex-1">
+                    <div className="font-semibold">{activity.studentName}</div>
+                    <div className="text-sm text-muted-foreground">
+                      enrolled in <span className="font-medium">{activity.teamName}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {activity.relativeTime}
+                    </div>
+                  </div>
+                </div>
+                {index < activities.length - 1 && <Separator className="my-4" />}
+              </div>
+            ))}
+          </div>
+        )}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-md">Error loading data: {error.message}</div>
+        )}
       </CardContent>
     </Card>
   )

@@ -56,16 +56,16 @@ function EscuelasInner() {
       setSaving(true)
       if (editingSchool) {
         await updateSchool(editingSchool.schoolid, data)
-        toast({ title: "Éxito", description: "Escuela actualizada correctamente" })
+        toast({ title: "Success", description: "School updated successfully" })
       } else {
         await addSchool(data)
-        toast({ title: "Éxito", description: "Escuela creada correctamente" })
+        toast({ title: "Success", description: "School created successfully" })
       }
       setDialogOpen(false)
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err?.message ?? "No se pudo guardar la escuela",
+        description: err?.message ?? "Could not save school",
         variant: "destructive",
       })
     } finally {

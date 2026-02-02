@@ -46,9 +46,9 @@ export function AutomationEditor({ automation, onClose }: AutomationEditorProps)
         <Card>
           <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
-              <CardTitle>Detalles de la Automatización</CardTitle>
+              <CardTitle>Automation Details</CardTitle>
               <div className="flex items-center gap-2">
-                <span className="text-sm">Estado:</span>
+                <span className="text-sm">Status:</span>
                 <Switch checked={automationStatus} onCheckedChange={setAutomationStatus} />
               </div>
             </div>
@@ -56,7 +56,7 @@ export function AutomationEditor({ automation, onClose }: AutomationEditorProps)
           <CardContent>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="automation-name">Nombre</Label>
+                <Label htmlFor="automation-name">Name</Label>
                 <Input
                   id="automation-name"
                   value={automationName}
@@ -136,12 +136,12 @@ export function AutomationEditor({ automation, onClose }: AutomationEditorProps)
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="minutes">Minutos</SelectItem>
-                          <SelectItem value="hours">Horas</SelectItem>
-                          <SelectItem value="days">Días</SelectItem>
+                          <SelectItem value="minutes">Minutes</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="days">Days</SelectItem>
                         </SelectContent>
                       </Select>
-                      <span className="text-sm text-muted-foreground">después</span>
+                      <span className="text-sm text-muted-foreground">after</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 border rounded-md p-3">

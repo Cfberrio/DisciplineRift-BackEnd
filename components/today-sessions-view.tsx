@@ -40,9 +40,9 @@ function SessionRow({ session }: { session: TodaySession }) {
   }
 
   const statusLabels = {
-    active: "Activa",
-    upcoming: "Próxima",
-    completed: "Completada",
+    active: "Active",
+    upcoming: "Upcoming",
+    completed: "Completed",
   }
 
   return (
@@ -76,7 +76,7 @@ function SessionRow({ session }: { session: TodaySession }) {
             disabled={isLoadingStudents}
           >
             <Users className="h-4 w-4" />
-            {session.studentCount} {session.studentCount === 1 ? "estudiante" : "estudiantes"}
+            {session.studentCount} {session.studentCount === 1 ? "student" : "students"}
             {isLoadingStudents ? (
               <RefreshCw className="h-3 w-3 animate-spin" />
             ) : isExpanded ? (
@@ -127,7 +127,7 @@ function SessionRow({ session }: { session: TodaySession }) {
               </div>
             ) : (
               <div className="text-center text-gray-500 py-4">
-                No hay estudiantes inscritos en esta sesión
+                No students enrolled in this session
               </div>
             )}
           </td>
@@ -140,7 +140,7 @@ function SessionRow({ session }: { session: TodaySession }) {
 export function TodaySessionsView() {
   const { data, isLoading, error, refetch } = useTodaySessions()
 
-  const currentDate = new Date().toLocaleDateString("es-ES", {
+  const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -155,7 +155,7 @@ export function TodaySessionsView() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              Sesiones de Hoy
+              Today's Sessions
             </CardTitle>
             <CardDescription className="text-base mt-1 capitalize">
               {currentDate}
@@ -169,7 +169,7 @@ export function TodaySessionsView() {
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Actualizar
+            Refresh
           </Button>
         </div>
       </CardHeader>
@@ -188,17 +188,17 @@ export function TodaySessionsView() {
           </div>
         ) : error ? (
           <div className="p-12 text-center">
-            <div className="text-red-600 mb-2">Error al cargar las sesiones</div>
+            <div className="text-red-600 mb-2">Error loading sessions</div>
             <div className="text-sm text-gray-500">{error.message}</div>
           </div>
         ) : sessions.length === 0 ? (
           <div className="p-12 text-center">
             <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              No hay sesiones programadas para hoy
+              No sessions scheduled for today
             </h3>
             <p className="text-sm text-gray-500">
-              Las sesiones aparecerán aquí cuando estén programadas
+              Sessions will appear here when scheduled
             </p>
           </div>
         ) : (
@@ -207,19 +207,19 @@ export function TodaySessionsView() {
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Hora
+                    Time
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Equipo
+                    Team
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                    Escuela
+                    School
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Estudiantes
+                    Students
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Estado
+                    Status
                   </th>
                 </tr>
               </thead>

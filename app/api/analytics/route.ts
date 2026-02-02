@@ -1,134 +1,142 @@
-/**
- * Analytics API Route Handler
- *
- * This file handles API requests for analytics data:
- * - GET: Retrieve analytics metrics
- *
- * INTEGRATION GUIDE:
- * 1. Replace the mock data with actual analytics data from your database or analytics service
- * 2. Add authentication and authorization checks
- * 3. Implement filtering by date range, user segments, etc.
- * 4. Add caching for performance optimization
- *
- * EXAMPLE INTEGRATION WITH ANALYTICS SERVICE:
- * ```
- * import { getAnalytics } from '@/lib/analytics-service'
- *
- * export async function GET(request: Request) {
- *   try {
- *     const { searchParams } = new URL(request.url)
- *     const period = searchParams.get('period') || '30d'
- *     const segment = searchParams.get('segment') || 'all'
- *
- *     // Get analytics data from your service
- *     const analyticsData = await getAnalytics({ period, segment })
- *
- *     return NextResponse.json(analyticsData)
- *   } catch (error) {
- *     return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 })
- *   }
- * }
- * ```
- */
-
 import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+import { DateTime } from "luxon"
+import { expandOccurrences } from "@/utils/schedule"
 import type { AnalyticsData } from "@/lib/api/types"
 
-/**
- * Mock analytics data for demonstration
- *
- * CUSTOMIZATION POINT:
- * - Replace with actual analytics data in production
- * - Consider adding different data sets for different time periods
- */
-const analyticsData: AnalyticsData = {
-  metrics: [
-    {
-      id: "1",
-      title: "Visitas",
-      value: 264,
-      change: 5.8,
-      icon: "trending-up",
-      secondaryValue: "0 hoy • 7 ayer",
-    },
-    {
-      id: "2",
-      title: "Ventas",
-      value: 10165,
-      change: 4.9,
-      icon: "dollar-sign",
-      secondaryValue: "$0.00 hoy • $0.00 ayer",
-    },
-    {
-      id: "3",
-      title: "Reservas",
-      value: 52,
-      change: 6.1,
-      icon: "users",
-      secondaryValue: "0 hoy • 0 ayer",
-    },
-    {
-      id: "4",
-      title: "Formularios",
-      value: 12,
-      change: 5.9,
-      icon: "file-text",
-      secondaryValue: "0 hoy • 1 ayer",
-    },
-  ],
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-/**
- * GET handler - Retrieve analytics data
- *
- * @param {Request} request - The incoming request object
- * @returns {NextResponse} JSON response with analytics data
- *
- * CUSTOMIZATION POINT:
- * - Add query parameter handling for filtering (period, segment, etc.)
- * - Add authentication middleware
- * - Add caching headers for performance
- */
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // CUSTOMIZATION POINT: Parse query parameters for filtering
-    // const { searchParams } = new URL(request.url)
-    // const period = searchParams.get('period') || '30d'
+    const zone = "America/New_York"
+    const now = DateTime.now().setZone(zone)
+    const todayStr = now.toFormat("yyyy-LL-dd")
 
-    // CUSTOMIZATION POINT: Add authentication check
-    // const session = await getSession(request)
-    // if (!session) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    // }
+    // Get all sessions
+    const { data: sessions, error: sessionsError } = await supabase
+      .from("session")
+      .select(`
+        sessionid,
+        startdate,
+        enddate,
+        starttime,
+        endtime,
+        daysofweek,
+        cancel,
+        teamid,
+        team:teamid (
+          teamid,
+          name
+        )
+      `)
 
-    // Simulate a delay to show loading state in the UI
-    // CUSTOMIZATION POINT: Remove this in production
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    if (sessionsError) {
+      console.error("Error fetching sessions:", sessionsError)
+      throw new Error("Failed to fetch sessions")
+    }
 
-    // CUSTOMIZATION POINT: Add caching headers
-    // const headers = new Headers()
-    // headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+    // Filter sessions that have occurrences today
+    const todaySessions: Array<{
+      sessionid: string
+      teamid: string
+      teamName: string
+      startTime: Date
+      endTime: Date
+    }> = []
 
-    // Return the analytics data
-    // CUSTOMIZATION POINT: Replace with actual data fetching logic
+    for (const session of sessions || []) {
+      // Expand occurrences for this session
+      const occurrences = expandOccurrences({
+        startdate: session.startdate,
+        enddate: session.enddate,
+        starttime: session.starttime,
+        endtime: session.endtime,
+        daysofweek: session.daysofweek,
+        cancel: session.cancel,
+      })
+
+      // Check if any occurrence is today
+      const todayOccurrences = occurrences.filter((occ) => {
+        const occDate = DateTime.fromJSDate(occ.start, { zone }).toFormat("yyyy-LL-dd")
+        return occDate === todayStr
+      })
+
+      // Add today's occurrences to the list
+      for (const occ of todayOccurrences) {
+        todaySessions.push({
+          sessionid: session.sessionid,
+          teamid: session.teamid,
+          teamName: session.team?.name || "Unknown Team",
+          startTime: occ.start,
+          endTime: occ.end,
+        })
+      }
+    }
+
+    // Sort by start time
+    todaySessions.sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+
+    // Count active sessions (currently happening)
+    const activeSessions = todaySessions.filter((session) => {
+      const nowMs = now.toMillis()
+      const startMs = session.startTime.getTime()
+      const endMs = session.endTime.getTime()
+      return nowMs >= startMs && nowMs <= endMs
+    }).length
+
+    // Find next session
+    let nextSessionTime: string | null = null
+    const upcomingSessions = todaySessions.filter((session) => {
+      return session.startTime.getTime() > now.toMillis()
+    })
+
+    if (upcomingSessions.length > 0) {
+      const nextSession = upcomingSessions[0]
+      const nextStart = DateTime.fromJSDate(nextSession.startTime, { zone })
+      const diff = nextStart.diff(now, ["hours", "minutes"])
+
+      if (diff.hours > 0) {
+        nextSessionTime = `In ${Math.floor(diff.hours)} hour${Math.floor(diff.hours) !== 1 ? "s" : ""}`
+      } else if (diff.minutes > 0) {
+        nextSessionTime = `In ${Math.floor(diff.minutes)} minute${Math.floor(diff.minutes) !== 1 ? "s" : ""}`
+      } else {
+        nextSessionTime = "Soon"
+      }
+    }
+
+    // Count total students expected (enrolled in today's sessions)
+    const uniqueTeamIds = [...new Set(todaySessions.map((s) => s.teamid))]
+    let totalStudents = 0
+
+    if (uniqueTeamIds.length > 0) {
+      const { data: enrollments, error: enrollError } = await supabase
+        .from("enrollment")
+        .select("enrollmentid, teamid")
+        .in("teamid", uniqueTeamIds)
+        .eq("isactive", true)
+
+      if (enrollError) {
+        console.error("Error fetching enrollments:", enrollError)
+      } else {
+        totalStudents = enrollments?.length || 0
+      }
+    }
+
+    const analyticsData: AnalyticsData = {
+      sessionsToday: todaySessions.length,
+      studentsExpected: totalStudents,
+      activeSessions: activeSessions,
+      nextSessionTime: nextSessionTime,
+    }
+
     return NextResponse.json(analyticsData)
   } catch (error) {
-    // CUSTOMIZATION POINT: Add error logging
     console.error("Error in GET /api/analytics:", error)
-
-    // Return 500 for server errors
     return NextResponse.json(
       { error: "Failed to fetch analytics data", details: error instanceof Error ? error.message : String(error) },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
-
-/**
- * CUSTOMIZATION POINT: Add additional API methods as needed
- *
- * Examples:
- * - POST /api/analytics/events - Track custom events
- * - GET /api/analytics/reports - Generate custom reports
- * - GET /api/analytics/compare - Compare metrics between periods
- */

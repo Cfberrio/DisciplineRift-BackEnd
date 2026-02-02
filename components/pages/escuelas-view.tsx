@@ -75,10 +75,10 @@ export function EscuelasView() {
       setBusy(true)
       if (editing) {
         await updateSchool(editing.schoolid, data)
-        toast({ title: "Éxito", description: "Escuela actualizada correctamente" })
+        toast({ title: "Success", description: "School updated successfully" })
       } else {
         await addSchool(data)
-        toast({ title: "Éxito", description: "Escuela creada correctamente" })
+        toast({ title: "Success", description: "School created successfully" })
       }
       setFormOpen(false)
       setSelected(null)
@@ -127,12 +127,12 @@ export function EscuelasView() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>Lista de Escuelas</CardTitle>
-                    <CardDescription>Administra todas las escuelas desde aquí.</CardDescription>
+                    <CardTitle>Schools List</CardTitle>
+                    <CardDescription>Manage all schools from here.</CardDescription>
                   </div>
                   <Button className="gap-2" onClick={openCreate}>
                     <Plus className="h-4 w-4" />
-                    Añadir Nueva Escuela
+                    Add New School
                   </Button>
                 </div>
               </CardHeader>
@@ -168,7 +168,7 @@ export function EscuelasView() {
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Detalles de la Escuela</DialogTitle>
+              <DialogTitle>School Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>

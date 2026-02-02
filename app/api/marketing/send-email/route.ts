@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       })
       return NextResponse.json(
         { 
-          error: "Error al obtener datos del equipo",
+          error: "Error fetching team data",
           details: teamError?.message || "Unknown error",
           hint: teamError?.hint
         },
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
     if (parentsError || !enrollmentData) {
       console.error("[SERVER] Error fetching enrollment data:", parentsError)
       return NextResponse.json(
-        { error: "Error al obtener datos de los padres" },
+        { error: "Error fetching parent data" },
         { status: 500 }
       )
     }
@@ -438,7 +438,7 @@ export async function POST(request: NextRequest) {
     console.error("[SERVER] POST /api/marketing/send-email - Error:", error)
     const message = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json(
-      { error: "Error al enviar emails", details: message },
+      { error: "Error sending emails", details: message },
       { status: 500 }
     )
   }

@@ -147,23 +147,23 @@ export function MarketingMetrics() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Estado de Envíos</CardTitle>
-            <CardDescription>Resumen de los últimos envíos</CardDescription>
+            <CardTitle>Delivery Status</CardTitle>
+            <CardDescription>Summary of recent deliveries</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="space-y-1">
                   <div className="text-2xl font-bold text-blue-600">2,345</div>
-                  <div className="text-xs text-muted-foreground">Entregados</div>
+                  <div className="text-xs text-muted-foreground">Delivered</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-2xl font-bold text-amber-600">198</div>
-                  <div className="text-xs text-muted-foreground">Pendientes</div>
+                  <div className="text-xs text-muted-foreground">Pending</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-2xl font-bold text-red-600">42</div>
-                  <div className="text-xs text-muted-foreground">Rebotados</div>
+                  <div className="text-xs text-muted-foreground">Bounced</div>
                 </div>
               </div>
 
