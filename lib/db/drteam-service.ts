@@ -122,6 +122,51 @@ class DrteamService {
     // Construir URL pública del bucket resume
     return `${supabaseUrl}/storage/v1/object/public/resume/${resumePath}`
   }
+
+  async deleteApplication(id: number): Promise<void> {
+    try {
+      const serverClient = await createServerSupabaseClient()
+
+      // Primero obtener el application para ver si tiene resume
+      const { data: application, error: fetchError } = await serverClient
+        .from("Drteam")
+        .select("resume")
+        .eq("id", id)
+        .single()
+
+      if (fetchError) {
+        console.error("[SERVER] Error fetching application:", fetchError)
+        throw new Error(`Error fetching application: ${fetchError.message}`)
+      }
+
+      // Si tiene resume, eliminarlo del storage
+      if (application?.resume) {
+        const { error: storageError } = await serverClient
+          .storage
+          .from("resume")
+          .remove([application.resume])
+
+        if (storageError) {
+          console.error("[SERVER] Error deleting resume from storage:", storageError)
+          // Continuar con la eliminación del registro aunque falle el archivo
+        }
+      }
+
+      // Eliminar el registro de la base de datos
+      const { error: deleteError } = await serverClient
+        .from("Drteam")
+        .delete()
+        .eq("id", id)
+
+      if (deleteError) {
+        console.error("[SERVER] Error deleting application:", deleteError)
+        throw new Error(`Error deleting application: ${deleteError.message}`)
+      }
+    } catch (error) {
+      console.error("[SERVER] Error in DrteamService.deleteApplication:", error)
+      throw error
+    }
+  }
 }
 
 export const drteamService = new DrteamService()

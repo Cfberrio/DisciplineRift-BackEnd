@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Download, FileX, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DrteamApplication, DrteamResponse } from "@/lib/db/drteam-service"
+import { DeleteApplicationDialog } from "./delete-application-dialog"
 
 interface ApplicationsTableProps {
   className?: string
@@ -174,6 +175,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   <TableHead>Phone</TableHead>
                   <TableHead className="min-w-96">Description</TableHead>
                   <TableHead className="w-32">Resume</TableHead>
+                  <TableHead className="w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               
@@ -182,7 +184,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   // Skeleton loading
                   Array.from({ length: pageSize }).map((_, index) => (
                     <TableRow key={index}>
-                      {Array.from({ length: 7 }).map((_, cellIndex) => (
+                      {Array.from({ length: 8 }).map((_, cellIndex) => (
                         <TableCell key={cellIndex}>
                           <div className="h-4 bg-gray-200 rounded animate-pulse" />
                         </TableCell>
@@ -191,7 +193,7 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                   ))
                 ) : applications.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
+                    <TableCell colSpan={8} className="text-center py-10">
                       <div className="flex flex-col items-center justify-center text-gray-500">
                         <FileX className="w-8 h-8 mb-2" />
                         <p>No applications available</p>
@@ -254,6 +256,12 @@ export function ApplicationsTable({ className }: ApplicationsTableProps) {
                             </TooltipContent>
                           </Tooltip>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <DeleteApplicationDialog
+                          application={application}
+                          onDeleted={fetchApplications}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
