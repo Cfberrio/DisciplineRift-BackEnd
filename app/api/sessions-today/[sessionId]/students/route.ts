@@ -8,10 +8,10 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(
   request: Request,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    const sessionId = params.sessionId
+    const { sessionId } = await params
 
     // Get the team ID for this session
     const { data: session, error: sessionError } = await supabase
