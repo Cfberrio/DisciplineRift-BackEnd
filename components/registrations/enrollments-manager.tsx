@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Plus, Trash2, Mail, Phone, User, Search } from "lucide-react"
+import { Plus, Trash2, Mail, Phone, User, Search, Loader2 } from "lucide-react"
 import { AddStudentDialog } from "./add-student-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDebouncedCallback } from "@/hooks/use-debounce"
@@ -76,7 +76,7 @@ export function EnrollmentsManager({
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>([])
   const [deletingEnrollment, setDeletingEnrollment] = useState<{
-    id: string
+    enrollmentid: string
     teamid: string
     studentName: string
   } | null>(null)
@@ -140,8 +140,14 @@ export function EnrollmentsManager({
 
   const handleDelete = async () => {
     if (!deletingEnrollment) return
-    await unenrollStudent.mutateAsync(deletingEnrollment)
-    setDeletingEnrollment(null)
+    
+    try {
+      await unenrollStudent.mutateAsync(deletingEnrollment)
+      setDeletingEnrollment(null)
+    } catch (error) {
+      // El toast de error ya se muestra en el hook, pero mantener el diálogo abierto
+      console.error('[EnrollmentsManager] Failed to unenroll:', error)
+    }
   }
 
   if (!teamId) {
@@ -341,11 +347,12 @@ export function EnrollmentsManager({
                             size="sm"
                             onClick={() =>
                               setDeletingEnrollment({
-                                id: enrollment.enrollmentid,
+                                enrollmentid: enrollment.enrollmentid,
                                 teamid: enrollment.teamid,
                                 studentName: `${student.firstname} ${student.lastname}`,
                               })
                             }
+                            disabled={unenrollStudent.isPending}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -382,12 +389,20 @@ export function EnrollmentsManager({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={unenrollStudent.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
+              disabled={unenrollStudent.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Unenroll
+              {unenrollStudent.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Unenrolling...
+                </>
+              ) : (
+                "Unenroll"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
