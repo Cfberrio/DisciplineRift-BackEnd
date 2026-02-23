@@ -563,7 +563,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                 Step 1: Select Season
               </CardTitle>
               <CardDescription>
-                Choose between Ongoing (teams currently running), Open (teams open for registration), or Closed (teams that have finished)
+                Choose between Ongoing (teams currently running), Open (teams open for registration), or Closed (teams that have concluded registrations but are still active)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -612,7 +612,7 @@ export function EmailCampaign({ onClose }: EmailCampaignProps) {
                   <Calendar className="h-8 w-8" />
                   <div className="text-center">
                     <div className="font-semibold">Closed</div>
-                    <div className="text-xs opacity-80">Teams that have finished</div>
+                    <div className="text-xs opacity-80">Teams that have concluded registrations but are still active</div>
                   </div>
                 </Button>
               </div>
