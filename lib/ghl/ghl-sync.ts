@@ -25,7 +25,7 @@ interface EnrollmentRow {
     studentid: string
     firstname: string
     lastname: string
-    level: string | null
+    Level: number | null
     grade: string
     parentid: string
     parent: {
@@ -63,7 +63,7 @@ async function fetchActiveEnrollments(): Promise<EnrollmentRow[]> {
         studentid,
         firstname,
         lastname,
-        level,
+        Level,
         grade,
         parentid,
         parent!inner (
@@ -137,7 +137,7 @@ function aggregateByParent(
       aggregated.studentNames.push(studentFullName)
     }
 
-    const studentLevel = student.level || "Not specified"
+    const studentLevel = student.Level != null ? String(student.Level) : "Not specified"
     if (!aggregated.studentLevels.includes(studentLevel)) {
       aggregated.studentLevels.push(studentLevel)
     }
