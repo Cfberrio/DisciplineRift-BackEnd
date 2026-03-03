@@ -6,15 +6,16 @@ const MAX_RETRIES = 3
 const RATE_LIMIT_DELAY_MS = 200
 const INITIAL_RETRY_DELAY_MS = 1000
 
-export const GHL_CUSTOM_FIELD_KEYS = {
-  STUDENT_NAMES: "contact.student_names",
-  STUDENT_LEVELS: "contact.student_levels",
-  TEAM_NAMES: "contact.team_names",
-  SCHOOL_NAMES: "contact.school_names",
-  ENROLLMENT_STATUS: "contact.enrollment_status",
-  LAST_SYNC: "contact.last_sync",
-  SOURCE_SYSTEM: "contact.source_system",
-  SEASON: "contact.season",
+export const GHL_CUSTOM_FIELD_IDS = {
+  STUDENT_NAMES: "wzYxiLElaqvzQ5yyeikZ",
+  STUDENT_LEVELS: "cO0C5DFqHgszgM1ZobGd",
+  TEAM_NAMES: "HIpx9xksk9892aoT3pOB",
+  SCHOOL_NAMES: "yI9jANhMHMHrZ13exgHZ",
+  ENROLLMENT_STATUS: "TtUHaPtAOl0WxwckmckM",
+  LAST_SYNC: "FkNtly0IyW2FdALfQfnA",
+  SOURCE_SYSTEM: "VLkcRENjFCyO9n96CB78",
+  SEASON: "Yijalb3WgGxdr0qJQOim",
+  SPORT: "7k9rYmzaV9brA7f21owK",
 } as const
 
 function getGHLHeaders(): Record<string, string> {

@@ -4,7 +4,7 @@ import {
   rateLimitedDelay,
   normalizePhoneForGHL,
   verifyGHLConfiguration,
-  GHL_CUSTOM_FIELD_KEYS,
+  GHL_CUSTOM_FIELD_IDS,
 } from "./ghl-client"
 import type {
   AggregatedParentData,
@@ -169,36 +169,40 @@ function buildCustomFields(
 ): GHLCustomField[] {
   return [
     {
-      key: GHL_CUSTOM_FIELD_KEYS.STUDENT_NAMES,
+      id: GHL_CUSTOM_FIELD_IDS.STUDENT_NAMES,
       field_value: aggregated.studentNames.join(", "),
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.STUDENT_LEVELS,
+      id: GHL_CUSTOM_FIELD_IDS.STUDENT_LEVELS,
       field_value: aggregated.studentLevels.join(", "),
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.TEAM_NAMES,
+      id: GHL_CUSTOM_FIELD_IDS.TEAM_NAMES,
       field_value: aggregated.teamNames.join(", "),
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.SCHOOL_NAMES,
+      id: GHL_CUSTOM_FIELD_IDS.SCHOOL_NAMES,
       field_value: aggregated.schoolNames.join(", "),
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.ENROLLMENT_STATUS,
+      id: GHL_CUSTOM_FIELD_IDS.ENROLLMENT_STATUS,
       field_value: "Active",
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.LAST_SYNC,
+      id: GHL_CUSTOM_FIELD_IDS.LAST_SYNC,
       field_value: new Date().toISOString(),
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.SOURCE_SYSTEM,
+      id: GHL_CUSTOM_FIELD_IDS.SOURCE_SYSTEM,
       field_value: SOURCE_SYSTEM_VALUE,
     },
     {
-      key: GHL_CUSTOM_FIELD_KEYS.SEASON,
+      id: GHL_CUSTOM_FIELD_IDS.SEASON,
       field_value: aggregated.seasons.join(", ") || "Not assigned",
+    },
+    {
+      id: GHL_CUSTOM_FIELD_IDS.SPORT,
+      field_value: aggregated.sports.join(", ") || "Not assigned",
     },
   ]
 }

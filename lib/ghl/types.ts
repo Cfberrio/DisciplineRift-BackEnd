@@ -1,5 +1,5 @@
 export interface GHLCustomField {
-  key: string
+  id: string
   field_value: string
 }
 
