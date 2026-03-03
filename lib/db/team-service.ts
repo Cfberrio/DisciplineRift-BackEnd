@@ -12,6 +12,7 @@ export interface Team {
   isactive: boolean
   isongoing: boolean
   status?: string | null
+  season?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -25,6 +26,7 @@ export interface CreateTeamData {
   participants: number
   isactive: boolean
   isongoing: boolean
+  season?: string | null
 }
 
 export interface UpdateTeamData {
@@ -36,6 +38,7 @@ export interface UpdateTeamData {
   participants?: number
   isactive?: boolean
   isongoing?: boolean
+  season?: string | null
 }
 
 class TeamService {
