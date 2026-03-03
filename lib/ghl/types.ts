@@ -49,6 +49,10 @@ export interface SyncSummary {
   skipped: number
   newContacts: number
   updatedContacts: number
+  batchOffset: number
+  batchLimit: number
+  hasMore: boolean
+  nextOffset: number
   details: SyncResult[]
 }
 

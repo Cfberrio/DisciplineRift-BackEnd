@@ -196,6 +196,10 @@ function buildCustomFields(
       key: GHL_CUSTOM_FIELD_KEYS.SOURCE_SYSTEM,
       field_value: SOURCE_SYSTEM_VALUE,
     },
+    {
+      key: GHL_CUSTOM_FIELD_KEYS.SEASON,
+      field_value: aggregated.seasons.join(", ") || "Not assigned",
+    },
   ]
 }
 
@@ -249,7 +253,12 @@ function buildContactPayload(
   return payload
 }
 
-export async function syncContactsToGHL(): Promise<SyncSummary> {
+const DEFAULT_BATCH_LIMIT = 50
+
+export async function syncContactsToGHL(
+  offset: number = 0,
+  limit: number = DEFAULT_BATCH_LIMIT
+): Promise<SyncSummary> {
   const startedAt = new Date()
   const details: SyncResult[] = []
   let synced = 0
@@ -258,7 +267,7 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
   let newContacts = 0
   let updatedContacts = 0
 
-  console.log("[GHL Sync] Starting contact sync to GoHighLevel...")
+  console.log(`[GHL Sync] Starting batch sync (offset=${offset}, limit=${limit})...`)
 
   const configCheck = verifyGHLConfiguration()
   if (!configCheck.isValid) {
@@ -281,29 +290,39 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
       skipped: 0,
       newContacts: 0,
       updatedContacts: 0,
+      batchOffset: offset,
+      batchLimit: limit,
+      hasMore: false,
+      nextOffset: 0,
       details: [],
     }
   }
 
   const parentMap = aggregateByParent(enrollments)
-  const totalParents = parentMap.size
+  const allParents = Array.from(parentMap.values())
+  const totalParents = allParents.length
+
+  const batchParents = allParents.slice(offset, offset + limit)
+  const hasMore = offset + limit < totalParents
+  const nextOffset = hasMore ? offset + limit : totalParents
 
   console.log(
-    `[GHL Sync] Aggregated ${enrollments.length} enrollments into ${totalParents} unique parents`
+    `[GHL Sync] Total: ${totalParents} parents | Batch: ${offset}-${offset + batchParents.length} (${batchParents.length} in this batch) | Remaining: ${hasMore ? totalParents - nextOffset : 0}`
   )
 
   let processedCount = 0
 
-  for (const [parentId, aggregated] of parentMap) {
+  for (const aggregated of batchParents) {
     processedCount++
+    const globalIndex = offset + processedCount
 
     if (!aggregated.email && !aggregated.phone) {
       console.warn(
-        `[GHL Sync] Skipping parent ${parentId} (${aggregated.firstName} ${aggregated.lastName}): no email or phone`
+        `[GHL Sync] Skipping parent ${aggregated.parentId} (${aggregated.firstName} ${aggregated.lastName}): no email or phone`
       )
       skipped++
       details.push({
-        parentId,
+        parentId: aggregated.parentId,
         parentName: `${aggregated.firstName} ${aggregated.lastName}`,
         email: aggregated.email,
         phone: aggregated.phone,
@@ -318,7 +337,7 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
       const payload = buildContactPayload(aggregated)
 
       console.log(
-        `[GHL Sync] [${processedCount}/${totalParents}] Upserting: ${aggregated.firstName} ${aggregated.lastName} (${aggregated.email})`
+        `[GHL Sync] [${globalIndex}/${totalParents}] Upserting: ${aggregated.firstName} ${aggregated.lastName} (${aggregated.email})`
       )
 
       const result = await upsertContact(payload)
@@ -332,7 +351,7 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
         }
 
         details.push({
-          parentId,
+          parentId: aggregated.parentId,
           parentName: `${aggregated.firstName} ${aggregated.lastName}`,
           email: aggregated.email,
           phone: aggregated.phone,
@@ -344,7 +363,7 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
       } else {
         failed++
         details.push({
-          parentId,
+          parentId: aggregated.parentId,
           parentName: `${aggregated.firstName} ${aggregated.lastName}`,
           email: aggregated.email,
           phone: aggregated.phone,
@@ -361,12 +380,12 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
           : "Unexpected error"
 
       console.error(
-        `[GHL Sync] Error syncing parent ${parentId}:`,
+        `[GHL Sync] Error syncing parent ${aggregated.parentId}:`,
         errorMessage
       )
 
       details.push({
-        parentId,
+        parentId: aggregated.parentId,
         parentName: `${aggregated.firstName} ${aggregated.lastName}`,
         email: aggregated.email,
         phone: aggregated.phone,
@@ -376,7 +395,7 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
       })
     }
 
-    if (processedCount < totalParents) {
+    if (processedCount < batchParents.length) {
       await rateLimitedDelay()
     }
   }
@@ -393,16 +412,24 @@ export async function syncContactsToGHL(): Promise<SyncSummary> {
     skipped,
     newContacts,
     updatedContacts,
+    batchOffset: offset,
+    batchLimit: limit,
+    hasMore,
+    nextOffset,
     details,
   }
 
-  console.log("[GHL Sync] Sync completed:", {
+  console.log("[GHL Sync] Batch completed:", {
     total: totalParents,
+    batchOffset: offset,
+    batchLimit: limit,
     synced,
     failed,
     skipped,
     newContacts,
     updatedContacts,
+    hasMore,
+    nextOffset,
     durationMs: summary.durationMs,
   })
 

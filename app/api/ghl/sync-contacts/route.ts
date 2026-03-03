@@ -46,8 +46,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[GHL API] Starting contact sync...")
-    const summary = await syncContactsToGHL()
+    let offset = 0
+    let limit = 50
+
+    try {
+      const body = await request.json()
+      if (typeof body.offset === "number") offset = body.offset
+      if (typeof body.limit === "number") limit = body.limit
+    } catch {
+      // No body or invalid JSON — use defaults
+    }
+
+    console.log(`[GHL API] Starting batch sync (offset=${offset}, limit=${limit})...`)
+    const summary = await syncContactsToGHL(offset, limit)
 
     return NextResponse.json({
       success: true,

@@ -3,7 +3,7 @@ import type { GHLContactPayload, GHLUpsertResponse } from "./types"
 const GHL_API_BASE = "https://services.leadconnectorhq.com"
 const GHL_API_VERSION = "2021-07-28"
 const MAX_RETRIES = 3
-const RATE_LIMIT_DELAY_MS = 700
+const RATE_LIMIT_DELAY_MS = 200
 const INITIAL_RETRY_DELAY_MS = 1000
 
 export const GHL_CUSTOM_FIELD_KEYS = {
@@ -14,6 +14,7 @@ export const GHL_CUSTOM_FIELD_KEYS = {
   ENROLLMENT_STATUS: "contact.enrollment_status",
   LAST_SYNC: "contact.last_sync",
   SOURCE_SYSTEM: "contact.source_system",
+  SEASON: "contact.season",
 } as const
 
 function getGHLHeaders(): Record<string, string> {
