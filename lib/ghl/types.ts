@@ -39,7 +39,11 @@ export interface SyncResult {
   tagsApplied: string[]
 }
 
+export type SyncMode = "incremental" | "full"
+
 export interface SyncSummary {
+  mode: SyncMode
+  since?: string
   startedAt: string
   completedAt: string
   durationMs: number

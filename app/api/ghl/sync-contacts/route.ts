@@ -46,19 +46,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let since: string | undefined
     let offset = 0
     let limit = 50
 
     try {
       const body = await request.json()
+      if (typeof body.since === "string") since = body.since
       if (typeof body.offset === "number") offset = body.offset
       if (typeof body.limit === "number") limit = body.limit
     } catch {
       // No body or invalid JSON — use defaults
     }
 
-    console.log(`[GHL API] Starting batch sync (offset=${offset}, limit=${limit})...`)
-    const summary = await syncContactsToGHL(offset, limit)
+    const mode = since ? "incremental" : "full"
+    console.log(
+      `[GHL API] Starting ${mode} sync${since ? ` (since=${since})` : ` (offset=${offset}, limit=${limit})`}...`
+    )
+
+    const summary = await syncContactsToGHL(
+      since ? { since } : { offset, limit }
+    )
 
     return NextResponse.json({
       success: true,

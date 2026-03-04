@@ -10,6 +10,7 @@ import type {
   AggregatedParentData,
   GHLContactPayload,
   GHLCustomField,
+  SyncMode,
   SyncResult,
   SyncSummary,
 } from "./types"
@@ -49,10 +50,10 @@ interface EnrollmentRow {
   }
 }
 
-async function fetchActiveEnrollments(): Promise<EnrollmentRow[]> {
+async function fetchActiveEnrollments(since?: string): Promise<EnrollmentRow[]> {
   const supabase = createServerSupabaseClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("enrollment")
     .select(
       `
@@ -89,17 +90,25 @@ async function fetchActiveEnrollments(): Promise<EnrollmentRow[]> {
     )
     .eq("isactive", true)
 
+  if (since) {
+    query = query.gte("created_at", since)
+  }
+
+  const { data, error } = await query
+
   if (error) {
     console.error("[GHL Sync] Error fetching enrollments:", error)
     throw new Error(`Failed to fetch enrollments: ${error.message}`)
   }
 
   if (!data || data.length === 0) {
-    console.log("[GHL Sync] No active enrollments found")
+    const modeLabel = since ? `incremental (since=${since})` : "full"
+    console.log(`[GHL Sync] No active enrollments found (${modeLabel})`)
     return []
   }
 
-  console.log(`[GHL Sync] Fetched ${data.length} active enrollments`)
+  const modeLabel = since ? `incremental since ${since}` : "full"
+  console.log(`[GHL Sync] Fetched ${data.length} active enrollments (${modeLabel})`)
   return data as unknown as EnrollmentRow[]
 }
 
@@ -259,10 +268,17 @@ function buildContactPayload(
 
 const DEFAULT_BATCH_LIMIT = 50
 
+export interface SyncOptions {
+  since?: string
+  offset?: number
+  limit?: number
+}
+
 export async function syncContactsToGHL(
-  offset: number = 0,
-  limit: number = DEFAULT_BATCH_LIMIT
+  options: SyncOptions = {}
 ): Promise<SyncSummary> {
+  const { since, offset = 0, limit = DEFAULT_BATCH_LIMIT } = options
+  const mode: SyncMode = since ? "incremental" : "full"
   const startedAt = new Date()
   const details: SyncResult[] = []
   let synced = 0
@@ -271,7 +287,9 @@ export async function syncContactsToGHL(
   let newContacts = 0
   let updatedContacts = 0
 
-  console.log(`[GHL Sync] Starting batch sync (offset=${offset}, limit=${limit})...`)
+  console.log(
+    `[GHL Sync] Starting ${mode} sync${since ? ` (since=${since})` : ` (offset=${offset}, limit=${limit})`}...`
+  )
 
   const configCheck = verifyGHLConfiguration()
   if (!configCheck.isValid) {
@@ -280,11 +298,13 @@ export async function syncContactsToGHL(
     )
   }
 
-  const enrollments = await fetchActiveEnrollments()
+  const enrollments = await fetchActiveEnrollments(since)
 
   if (enrollments.length === 0) {
     const completedAt = new Date()
     return {
+      mode,
+      since,
       startedAt: startedAt.toISOString(),
       completedAt: completedAt.toISOString(),
       durationMs: completedAt.getTime() - startedAt.getTime(),
@@ -306,19 +326,22 @@ export async function syncContactsToGHL(
   const allParents = Array.from(parentMap.values())
   const totalParents = allParents.length
 
-  const batchParents = allParents.slice(offset, offset + limit)
-  const hasMore = offset + limit < totalParents
+  const parentsToProcess = since
+    ? allParents
+    : allParents.slice(offset, offset + limit)
+
+  const hasMore = since ? false : offset + limit < totalParents
   const nextOffset = hasMore ? offset + limit : totalParents
 
   console.log(
-    `[GHL Sync] Total: ${totalParents} parents | Batch: ${offset}-${offset + batchParents.length} (${batchParents.length} in this batch) | Remaining: ${hasMore ? totalParents - nextOffset : 0}`
+    `[GHL Sync] ${mode}: ${totalParents} parents found | Processing ${parentsToProcess.length}${hasMore ? ` | Remaining: ${totalParents - nextOffset}` : ""}`
   )
 
   let processedCount = 0
 
-  for (const aggregated of batchParents) {
+  for (const aggregated of parentsToProcess) {
     processedCount++
-    const globalIndex = offset + processedCount
+    const globalIndex = since ? processedCount : offset + processedCount
 
     if (!aggregated.email && !aggregated.phone) {
       console.warn(
@@ -399,7 +422,7 @@ export async function syncContactsToGHL(
       })
     }
 
-    if (processedCount < batchParents.length) {
+    if (processedCount < parentsToProcess.length) {
       await rateLimitedDelay()
     }
   }
@@ -407,6 +430,8 @@ export async function syncContactsToGHL(
   const completedAt = new Date()
 
   const summary: SyncSummary = {
+    mode,
+    since,
     startedAt: startedAt.toISOString(),
     completedAt: completedAt.toISOString(),
     durationMs: completedAt.getTime() - startedAt.getTime(),
@@ -423,17 +448,17 @@ export async function syncContactsToGHL(
     details,
   }
 
-  console.log("[GHL Sync] Batch completed:", {
+  console.log(`[GHL Sync] ${mode} sync completed:`, {
+    mode,
+    since,
     total: totalParents,
-    batchOffset: offset,
-    batchLimit: limit,
+    processed: parentsToProcess.length,
     synced,
     failed,
     skipped,
     newContacts,
     updatedContacts,
     hasMore,
-    nextOffset,
     durationMs: summary.durationMs,
   })
 
