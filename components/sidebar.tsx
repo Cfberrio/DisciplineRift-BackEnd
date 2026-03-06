@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Users, GraduationCap, UserCheck, Mail, FileText, Bell, Award, LogOut, ChevronLeft, ChevronRight, ClipboardList, Newspaper, Percent } from "lucide-react"
+import { Home, Calendar, Users, GraduationCap, UserCheck, Mail, FileText, Bell, Award, LogOut, ChevronLeft, ChevronRight, ClipboardList, Newspaper, Percent, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
@@ -21,6 +21,7 @@ const navigation = [
   { name: "Newsletter", href: "/email-marketing", icon: Newspaper },
   { name: "Reminders", href: "/reminders", icon: Bell },
   { name: "Certificates", href: "/certificates", icon: Award },
+  { name: "GHL Sync", href: "/ghl-sync", icon: RefreshCw },
 ]
 
 export function Sidebar() {
